@@ -54,7 +54,7 @@ class WordAgent:
         sections = self.build_sections(document_type)
 
         paragraphs = [
-            ("title", "办公文档草稿"),
+            ("title", self.build_document_title(user_task, document_type)),
             ("heading", "原始需求"),
             ("text", user_task),
             ("heading", "文档类型"),
@@ -85,7 +85,20 @@ class WordAgent:
 
         return paragraphs
 
+    def build_document_title(self, user_task, document_type):
+        if document_type == "大学生暑假安全教育班会文案":
+            return "大学生暑假安全宣传教育主题班会文案"
+
+        return "办公文档草稿"
+
     def build_document_summary(self, user_task, document_type):
+        if document_type == "大学生暑假安全教育班会文案":
+            return (
+                "这是一份面向大学生的暑假安全宣传教育主题班会文案，"
+                "重点围绕防溺水、交通安全、网络安全、兼职实习安全、心理健康和应急联系展开，"
+                "可直接用于班会主持、班级通知或安全教育材料。"
+            )
+
         return (
             f"这是一份{document_type}草稿，核心需求是：{user_task}。"
             "当前版本先搭建基础结构，后续需要补充真实数据、案例和责任信息。"
@@ -130,6 +143,9 @@ class WordAgent:
         return advice
 
     def detect_document_type(self, user_task):
+        if self.is_student_summer_safety_task(user_task):
+            return "大学生暑假安全教育班会文案"
+
         if "通知" in user_task:
             return "通知"
 
@@ -144,7 +160,53 @@ class WordAgent:
 
         return "通用文档"
 
+    def is_student_summer_safety_task(self, user_task):
+        required_keywords = ["安全"]
+        student_keywords = ["大学生", "学生", "班会"]
+        summer_keywords = ["暑假", "假期", "暑期"]
+
+        has_required = all(keyword in user_task for keyword in required_keywords)
+        has_student = any(keyword in user_task for keyword in student_keywords)
+        has_summer = any(keyword in user_task for keyword in summer_keywords)
+        return has_required and has_student and has_summer
+
     def build_sections(self, document_type):
+        if document_type == "大学生暑假安全教育班会文案":
+            return [
+                (
+                    "一、班会主题",
+                    "安全度暑假，平安再相聚。引导同学们增强安全意识，提前识别假期常见风险，做到离校不离安全、放假不放松防范。",
+                ),
+                (
+                    "二、班会目标",
+                    "通过本次班会，使同学们了解暑假期间容易出现的溺水、交通、网络诈骗、兼职实习、消防用电、心理健康等风险，掌握基本防范方法，明确遇到紧急情况时的求助渠道。",
+                ),
+                (
+                    "三、开场主持词",
+                    "同学们，暑假即将开始，假期是放松身心、提升自我的时间，但安全永远是第一位的。今天我们围绕暑假安全开展主题班会，希望大家把安全提醒真正记在心里、落实到行动中，平安离校，平安返校。",
+                ),
+                (
+                    "四、重点安全提醒",
+                    "第一，防溺水安全：不私自下水游泳，不到无安全设施、无救援人员的水域玩耍。第二，交通安全：外出遵守交通规则，不乘坐无牌、超载或存在安全隐患的车辆。第三，网络安全：警惕刷单返利、冒充客服、虚假中奖、游戏交易等诈骗信息，不随意转账，不泄露验证码。第四，兼职实习安全：选择正规平台和单位，不轻信高薪兼职，不提前缴纳押金、培训费或保证金。第五，消防和用电安全：离开宿舍或家中时关闭电源，不私拉乱接电线，不使用违规电器。",
+                ),
+                (
+                    "五、互动提问",
+                    "问题一：如果收到陌生人发来的兼职链接并要求先交押金，应该怎么做？问题二：同伴邀请去野外水域游泳时，应该如何劝阻？问题三：假期外出前，应该把行程告诉谁？通过提问让同学们把安全知识转化成具体判断。",
+                ),
+                (
+                    "六、假期行动倡议",
+                    "请同学们做到三主动：主动向家人说明假期安排，主动远离危险场所，主动保存辅导员、班主任、家人和紧急求助电话。做到三不做：不参与高风险活动，不轻信陌生信息，不隐瞒突发情况。",
+                ),
+                (
+                    "七、结束语",
+                    "安全不是一句口号，而是每一次选择。希望大家在暑假期间合理安排学习、生活和社会实践，保持联系畅通，遇到困难及时求助。祝全体同学度过一个平安、充实、健康的暑假。",
+                ),
+                (
+                    "八、班会记录建议",
+                    "可记录参会人数、主持人、班会时间、重点提醒内容、互动问题回答情况和学生安全承诺情况，便于后续留档。",
+                ),
+            ]
+
         if document_type == "通知":
             return [
                 ("通知事项", "请在这里填写需要通知的具体事情。"),

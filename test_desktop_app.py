@@ -22,6 +22,10 @@ def test_build_desktop_command():
     if word_command != "帮我写一份项目总结 Word 文档":
         raise AssertionError(f"Word 命令拼接错误：{word_command}")
 
+    empty_word_command = build_desktop_command("帮我写一份{主题} Word 文档", "")
+    if empty_word_command:
+        raise AssertionError(f"空主题不应该生成命令：{empty_word_command}")
+
     file_command = build_desktop_command("请生成改进版 {文件路径}", "", "C:\\test\\demo.docx")
     if file_command != "请生成改进版 C:\\test\\demo.docx":
         raise AssertionError(f"文件改进命令拼接错误：{file_command}")

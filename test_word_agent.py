@@ -6,6 +6,11 @@ from agents.qa_agent import QAAgent
 
 
 def main():
+    test_word_agent_builds_report()
+    test_word_agent_builds_student_summer_safety_script()
+
+
+def test_word_agent_builds_report():
     test_output_folder = "outputs/test_word_documents"
     agent = WordAgent(output_folder=test_output_folder)
     result = agent.handle("帮我写一份项目阶段总结报告")
@@ -62,6 +67,40 @@ def main():
         raise AssertionError("Word 文档没有写入素材库生成建议。")
 
     print(f"测试通过：Word Agent 已生成文件 {document_path}")
+
+
+def test_word_agent_builds_student_summer_safety_script():
+    test_output_folder = "outputs/test_word_documents"
+    agent = WordAgent(output_folder=test_output_folder)
+    result = agent.handle("帮我写一份大学生暑假安全宣传教育班会的文案")
+    document_path = extract_file_path(result)
+
+    qa_agent = QAAgent()
+    document_content = qa_agent.read_file_content(document_path)
+    required_texts = [
+        "大学生暑假安全宣传教育主题班会文案",
+        "班会主题",
+        "防溺水",
+        "网络诈骗",
+        "兼职实习安全",
+        "结束语",
+    ]
+
+    for text in required_texts:
+        if text not in document_content:
+            raise AssertionError(f"大学生暑假安全班会文案缺少内容：{text}")
+
+    if "请在这里填写" in document_content:
+        raise AssertionError("大学生暑假安全班会文案不应该再出现模板占位文字。")
+
+    print(f"测试通过：Word Agent 已生成大学生暑假安全班会文案 {document_path}")
+
+
+def extract_file_path(task_result):
+    for line in task_result.splitlines():
+        if line.startswith("文件位置："):
+            return Path(line.replace("文件位置：", "", 1).strip())
+    raise AssertionError(f"结果中没有文件位置：{task_result}")
 
 
 if __name__ == "__main__":

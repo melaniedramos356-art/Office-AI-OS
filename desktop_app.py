@@ -16,6 +16,8 @@ def build_desktop_command(command_template, topic="", file_path=""):
     cleaned_file_path = file_path.strip() if isinstance(file_path, str) else ""
 
     if "{主题}" in command:
+        if not cleaned_topic:
+            return ""
         command = command.replace("{主题}", cleaned_topic or "办公任务")
 
     if "{文件路径}" in command:
@@ -89,7 +91,6 @@ def run_desktop_app():
         selected_button["button"] = button
         status_text.set(f"{button.get('label', '办公功能')}：{button.get('input_hint', '')}")
         task_entry.delete(0, tk.END)
-        task_entry.insert(0, button.get("input_hint", ""))
 
     for button in buttons:
         button_widget = tk.Button(
