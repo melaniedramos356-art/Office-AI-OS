@@ -4,12 +4,14 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.technique_library import TechniqueLibrary
+from models.model_router import ModelRouter
 
 
 class ExcelAgent:
     def __init__(self, output_folder="outputs/excel_files"):
         self.output_folder = Path(output_folder)
         self.technique_library = TechniqueLibrary()
+        self.model_router = ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -91,7 +93,56 @@ class ExcelAgent:
         rows.extend([[], ["素材库生成建议", "说明"]])
         for advice in self.technique_library.get_advice("excel"):
             rows.append(["建议", advice])
+
+        model_advice = self.build_model_advice(rows)
+        rows.extend([[], ["DeepSeek 字段建议", "说明"]])
+        for advice in model_advice:
+            rows.append(["模型建议", advice])
         return rows
+
+    def build_model_advice(self, rows):
+        user_task = self.extract_original_task(rows)
+        prompt = (
+            "请为下面的 Excel 办公表格生成 3 条字段设计建议。"
+            "要求：只输出 3 行，每行一条建议，不要输出长篇解释。\n\n"
+            f"用户需求：{user_task}"
+        )
+        generation = self.model_router.generate("excel", prompt)
+        result = generation.get("result", "")
+
+        if self.is_unusable_model_result(result):
+            return [
+                "保留原始需求，方便后续追溯。",
+                "表头字段要稳定，避免一列混合多种含义。",
+                "增加备注列，用于记录不确定信息。",
+            ]
+
+        return self.split_model_advice(result)
+
+    def extract_original_task(self, rows):
+        for row in rows:
+            if len(row) >= 2 and row[0] == "原始需求":
+                return row[1]
+        return "未识别原始需求"
+
+    def is_unusable_model_result(self, result):
+        if not isinstance(result, str) or not result.strip():
+            return True
+
+        error_keywords = ["调用失败", "未设置", "返回格式异常", "没有收到有效提示词"]
+        for keyword in error_keywords:
+            if keyword in result:
+                return True
+        return False
+
+    def split_model_advice(self, result):
+        advice_items = []
+        for line in result.splitlines():
+            cleaned_line = line.strip().lstrip("-").lstrip("1234567890.、 ").strip()
+            if cleaned_line:
+                advice_items.append(cleaned_line)
+
+        return advice_items[:3] or ["DeepSeek 已返回建议，但内容需要人工复核。"]
 
     def detect_table_type(self, user_task):
         if "客户" in user_task:

@@ -195,3 +195,5 @@ DeepSeek API Key 只从环境变量读取：
 ```text
 DEEPSEEK_API_KEY
 ```
+
+Excel Agent 已接入 Model Router。当前会优先使用 DeepSeek 生成字段建议，并写入 `.xlsx` 文件。
