@@ -1,3 +1,4 @@
+from agents.ai_butler_agent import AIButlerAgent
 from agents.browser_agent import BrowserAgent
 from agents.excel_agent import ExcelAgent
 from agents.learning_agent import LearningAgent
@@ -9,6 +10,7 @@ from agents.word_agent import WordAgent
 
 class ChiefCoordinator:
     def __init__(self):
+        self.ai_butler_agent = AIButlerAgent()
         self.browser_agent = BrowserAgent()
         self.learning_agent = LearningAgent()
         self.word_agent = WordAgent()
@@ -40,6 +42,10 @@ class ChiefCoordinator:
         research_keywords = ["调研", "搜索", "资料", "查找", "研究", "竞品", "research"]
         browser_keywords = ["浏览器", "网页", "网站", "打开", "链接", "网址", "url", "browser"]
         learning_keywords = ["学习素材", "素材库", "优秀素材", "技巧库", "经验库", "learning"]
+        butler_keywords = ["管家", "规划", "复杂任务", "修改已有文件", "参考原文件"]
+
+        if self.has_keyword(task_text, butler_keywords):
+            return self.ai_butler_agent
 
         if self.has_keyword(task_text, learning_keywords):
             return self.learning_agent

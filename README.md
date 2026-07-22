@@ -226,3 +226,33 @@ ArtStation
 BrandGuidelines
 lapa
 ```
+
+## v0.6 AI Butler 与通用制作技巧
+
+AI Butler Agent 是管家规划层，负责把复杂任务拆成可执行步骤。它不替代 Word / PPT / Excel Agent，而是负责安排它们工作。
+
+核心关系：
+
+```text
+ChatGPT / Codex 管家：理解复杂需求、拆解任务、协调模型和 Agent
+Office-AI-OS 本地核心：读取知识库、调用模型、生成或修改 Office 文件
+DeepSeek / Doubao / Kimi：通过 Model Router 提供不同 AI 能力
+ProductionTechniqueLibrary：提供版面设计、文案生成、图片查找、图片生成技巧
+Word / PPT / Excel Agent：负责具体文件生成或修改
+QA Agent：负责最后质量检查
+```
+
+没有 ChatGPT 管家时，Office-AI-OS 仍然会读取本地知识库和模型路由完成任务。
+
+测试命令：
+
+```bash
+python test_ai_butler_agent.py
+```
+
+通用制作技巧位置：
+
+```text
+memory/production_techniques.md
+materials/shared/
+```

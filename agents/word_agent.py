@@ -4,6 +4,7 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.inspiration_library import InspirationLibrary
+from agents.production_technique_library import ProductionTechniqueLibrary
 from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
 
@@ -12,6 +13,7 @@ class WordAgent:
     def __init__(self, output_folder="outputs/word_documents"):
         self.output_folder = Path(output_folder)
         self.inspiration_library = InspirationLibrary()
+        self.production_technique_library = ProductionTechniqueLibrary()
         self.technique_library = TechniqueLibrary()
         self.model_router = ModelRouter()
 
@@ -68,6 +70,8 @@ class WordAgent:
             [
                 ("heading", "AI 结构建议"),
                 *[("bullet", advice) for advice in self.build_model_advice(user_task, document_type, sections)],
+                ("heading", "通用制作技巧"),
+                *[("bullet", technique) for technique in self.production_technique_library.get_techniques("word")],
                 ("heading", "灵感素材查找建议"),
                 *[("bullet", advice) for advice in self.build_inspiration_advice(user_task)],
                 ("heading", "素材库生成建议"),

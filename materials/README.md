@@ -2,6 +2,12 @@
 
 把你认为优秀的办公素材放到对应板块的 `examples` 文件夹里。
 
+如果素材同时适合 Word、PPT、Excel，或者你不确定应该放哪里，先放到：
+
+```text
+materials/shared/examples/
+```
+
 当前支持文件类型：
 
 ```text

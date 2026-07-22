@@ -56,6 +56,15 @@ def main():
     if "质量检查清单" not in table_content:
         raise AssertionError("Excel 表格没有写入质量检查清单。")
 
+    if "通用制作技巧" not in table_content:
+        raise AssertionError("Excel 表格没有写入通用制作技巧。")
+
+    if "版面设计" not in table_content or "文案生成" not in table_content:
+        raise AssertionError("Excel 表格没有写入版面设计和文案生成技巧。")
+
+    if "图片查找" not in table_content or "图片生成" not in table_content:
+        raise AssertionError("Excel 表格没有写入图片相关制作技巧。")
+
     if "数据分析网站灵感库" not in table_content:
         raise AssertionError("Excel 表格没有写入数据分析网站灵感库。")
 

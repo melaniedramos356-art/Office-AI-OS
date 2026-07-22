@@ -4,6 +4,7 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.data_analysis_inspiration_library import DataAnalysisInspirationLibrary
+from agents.production_technique_library import ProductionTechniqueLibrary
 from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
 
@@ -12,6 +13,7 @@ class ExcelAgent:
     def __init__(self, output_folder="outputs/excel_files"):
         self.output_folder = Path(output_folder)
         self.data_analysis_inspiration_library = DataAnalysisInspirationLibrary()
+        self.production_technique_library = ProductionTechniqueLibrary()
         self.technique_library = TechniqueLibrary()
         self.model_router = ModelRouter()
 
@@ -105,6 +107,10 @@ class ExcelAgent:
 
         rows.extend([[], ["质量检查清单", "检查要求"]])
         rows.extend(self.build_quality_check_rows(table_type))
+
+        rows.extend([[], ["通用制作技巧", "说明"]])
+        for technique in self.production_technique_library.get_techniques("excel"):
+            rows.append(["技巧", technique])
 
         rows.extend([[], ["素材库生成建议", "说明"]])
         for advice in self.technique_library.get_advice("excel"):
