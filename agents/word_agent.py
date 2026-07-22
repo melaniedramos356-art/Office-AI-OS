@@ -3,13 +3,17 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.inspiration_library import InspirationLibrary
 from agents.technique_library import TechniqueLibrary
+from models.model_router import ModelRouter
 
 
 class WordAgent:
     def __init__(self, output_folder="outputs/word_documents"):
         self.output_folder = Path(output_folder)
+        self.inspiration_library = InspirationLibrary()
         self.technique_library = TechniqueLibrary()
+        self.model_router = ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -52,6 +56,8 @@ class WordAgent:
             ("text", user_task),
             ("heading", "文档类型"),
             ("text", document_type),
+            ("heading", "文档摘要"),
+            ("text", self.build_document_summary(user_task, document_type)),
         ]
 
         for title, content in sections:
@@ -60,6 +66,10 @@ class WordAgent:
 
         paragraphs.extend(
             [
+                ("heading", "AI 结构建议"),
+                *[("bullet", advice) for advice in self.build_model_advice(user_task, document_type, sections)],
+                ("heading", "灵感素材查找建议"),
+                *[("bullet", advice) for advice in self.build_inspiration_advice(user_task)],
                 ("heading", "素材库生成建议"),
                 *[("bullet", advice) for advice in self.technique_library.get_advice("word")],
                 ("heading", "待确认事项"),
@@ -69,6 +79,69 @@ class WordAgent:
         )
 
         return paragraphs
+
+    def build_document_summary(self, user_task, document_type):
+        return (
+            f"这是一份{document_type}草稿，核心需求是：{user_task}。"
+            "当前版本先搭建基础结构，后续需要补充真实数据、案例和责任信息。"
+        )
+
+    def build_model_advice(self, user_task, document_type, sections):
+        section_titles = "、".join([section[0] for section in sections])
+        prompt = (
+            "请为下面的 Word 办公文档生成 3 条结构优化建议。"
+            "要求：只输出 3 行，每行一条建议，不要输出长篇解释。\n\n"
+            f"文档类型：{document_type}\n"
+            f"用户需求：{user_task}\n"
+            f"当前章节：{section_titles}"
+        )
+        generation = self.model_router.generate("word", prompt)
+        route_info = generation.get("route", {})
+        result = generation.get("result", "")
+
+        if route_info.get("status") != "available" or self.is_unusable_model_result(result):
+            return self.build_fallback_model_advice()
+
+        return self.split_model_advice(result)
+
+    def build_fallback_model_advice(self):
+        return [
+            "先写结论和目的，再补充背景和过程。",
+            "每个章节只处理一个主题，避免把问题、原因和计划混在一起。",
+            "关键结论后面预留数据、案例或截图位置，方便后续补强可信度。",
+        ]
+
+    def build_inspiration_advice(self, user_task):
+        source_lines = self.inspiration_library.build_source_lines(user_task, limit=5)
+        keyword_lines = self.inspiration_library.build_search_keywords(user_task)[:3]
+        advice = []
+
+        for source_line in source_lines:
+            advice.append(source_line.replace("- ", "", 1))
+
+        for keyword in keyword_lines:
+            advice.append(f"搜索词：{keyword}")
+
+        return advice
+
+    def is_unusable_model_result(self, result):
+        if not isinstance(result, str) or not result.strip():
+            return True
+
+        error_keywords = ["调用失败", "未设置", "返回格式异常", "没有收到有效提示词", "Mock"]
+        for keyword in error_keywords:
+            if keyword in result:
+                return True
+        return False
+
+    def split_model_advice(self, result):
+        advice_items = []
+        for line in result.splitlines():
+            cleaned_line = line.strip().lstrip("-").lstrip("1234567890.、 ").strip()
+            if cleaned_line:
+                advice_items.append(cleaned_line)
+
+        return advice_items[:3] or self.build_fallback_model_advice()
 
     def detect_document_type(self, user_task):
         if "通知" in user_task:
