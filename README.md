@@ -268,3 +268,25 @@ File Reader Agent 可以读取用户提供的 `.docx`、`.pptx`、`.xlsx`、`.md
 ```bash
 python test_file_reader_agent.py
 ```
+
+## v0.6 File Improvement Agent
+
+File Improvement Agent 可以读取用户提供的 Word / PPT / Excel 文件，并输出改进建议。
+
+当前覆盖：
+
+```text
+当前内容判断
+制作技巧建议
+文案修改建议
+版面设计建议
+图片素材建议
+数据图表建议
+下一步执行建议
+```
+
+测试命令：
+
+```bash
+python test_file_improvement_agent.py
+```
