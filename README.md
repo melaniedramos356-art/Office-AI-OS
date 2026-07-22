@@ -433,3 +433,36 @@ python test_office_panel_agent.py
 ```text
 outputs/office_panels/
 ```
+
+## v0.10 Desktop App
+
+Desktop App 是最小桌面交互页面，当前使用 Python 自带的 Tkinter，不需要额外安装界面框架。
+
+启动方式一：
+
+```bash
+python desktop_app.py
+```
+
+启动方式二：
+
+```text
+双击 start_desktop_app.bat
+```
+
+当前界面支持：
+
+```text
+新建 Word
+新建 PPT
+新建 Excel
+改进文件
+找素材
+查看结果
+```
+
+测试命令：
+
+```bash
+python test_desktop_app.py
+```
