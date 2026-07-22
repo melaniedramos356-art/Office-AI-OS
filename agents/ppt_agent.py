@@ -4,12 +4,14 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.technique_library import TechniqueLibrary
+from models.model_router import ModelRouter
 
 
 class PPTAgent:
     def __init__(self, output_folder="outputs/ppt_files"):
         self.output_folder = Path(output_folder)
         self.technique_library = TechniqueLibrary()
+        self.model_router = ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -45,13 +47,21 @@ class PPTAgent:
     def build_slide_data(self, user_task):
         presentation_type = self.detect_presentation_type(user_task)
         slides = self.build_slides(presentation_type)
+        agenda_slide = self.build_agenda_slide(slides)
 
         slide_data = [
             {
                 "title": f"{presentation_type}",
                 "bullets": [user_task, "自动生成的演示稿草稿", "后续可继续补充真实数据和图片"],
             }
-        ] + slides
+        ] + [agenda_slide] + slides
+
+        slide_data.append(
+            {
+                "title": "AI 结构建议",
+                "bullets": self.build_model_advice(user_task, presentation_type, slides),
+            }
+        )
 
         slide_data.append(
             {
@@ -60,6 +70,62 @@ class PPTAgent:
             }
         )
         return slide_data
+
+    def build_agenda_slide(self, slides):
+        agenda_items = []
+        for slide in slides:
+            title = slide.get("title", "").strip()
+            if title:
+                agenda_items.append(title)
+
+        return {
+            "title": "目录",
+            "bullets": agenda_items[:5] or ["背景", "核心内容", "结论", "下一步"],
+        }
+
+    def build_model_advice(self, user_task, presentation_type, slides):
+        slide_titles = "、".join([slide["title"] for slide in slides])
+        prompt = (
+            "请为下面的 PPT 生成 3 条结构优化建议。"
+            "要求：只输出 3 行，每行一条建议，不要输出长篇解释。\n\n"
+            f"PPT 类型：{presentation_type}\n"
+            f"用户需求：{user_task}\n"
+            f"当前页面：{slide_titles}"
+        )
+        generation = self.model_router.generate("ppt", prompt)
+        route_info = generation.get("route", {})
+        result = generation.get("result", "")
+
+        if route_info.get("status") != "available" or self.is_unusable_model_result(result):
+            return self.build_fallback_model_advice()
+
+        return self.split_model_advice(result)
+
+    def build_fallback_model_advice(self):
+        return [
+            "先讲结论，再展开背景和依据。",
+            "每页只保留 3 个以内重点，避免一页塞太多文字。",
+            "关键页预留图片、图表或案例位置，方便后续增强视觉效果。",
+        ]
+
+    def is_unusable_model_result(self, result):
+        if not isinstance(result, str) or not result.strip():
+            return True
+
+        error_keywords = ["调用失败", "未设置", "返回格式异常", "没有收到有效提示词", "Mock"]
+        for keyword in error_keywords:
+            if keyword in result:
+                return True
+        return False
+
+    def split_model_advice(self, result):
+        advice_items = []
+        for line in result.splitlines():
+            cleaned_line = line.strip().lstrip("-").lstrip("1234567890.、 ").strip()
+            if cleaned_line:
+                advice_items.append(cleaned_line)
+
+        return advice_items[:3] or self.build_fallback_model_advice()
 
     def detect_presentation_type(self, user_task):
         if "销售" in user_task or "营收" in user_task or "收入" in user_task:

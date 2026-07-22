@@ -38,6 +38,12 @@ def main():
     if "项目阶段汇报" not in presentation_content:
         raise AssertionError("PPT 文件没有写入原始需求。")
 
+    if "目录" not in presentation_content:
+        raise AssertionError("PPT 文件没有写入目录页。")
+
+    if "AI 结构建议" not in presentation_content:
+        raise AssertionError("PPT 文件没有写入 AI 结构建议。")
+
     if "素材库生成建议" not in presentation_content:
         raise AssertionError("PPT 文件没有写入素材库生成建议。")
 
