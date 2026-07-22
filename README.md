@@ -29,3 +29,19 @@ python test_word_agent.py
 ```text
 outputs/word_documents/
 ```
+
+## v0.3 Excel Agent
+
+Excel Agent 现在可以生成 CSV 表格草稿。
+
+测试命令：
+
+```bash
+python test_excel_agent.py
+```
+
+生成文件位置：
+
+```text
+outputs/excel_files/
+```
