@@ -1,6 +1,8 @@
 from pathlib import Path
+from zipfile import ZipFile
 
 from agents.word_agent import WordAgent
+from agents.qa_agent import QAAgent
 
 
 def main():
@@ -24,7 +26,14 @@ def main():
     if not document_path.exists():
         raise AssertionError(f"文件不存在：{document_path}")
 
-    document_content = document_path.read_text(encoding="utf-8")
+    if document_path.suffix.lower() != ".docx":
+        raise AssertionError(f"Word Agent 应该生成 .docx 文件，实际是：{document_path}")
+
+    with ZipFile(document_path, "r") as docx_file:
+        docx_file.read("word/document.xml")
+
+    qa_agent = QAAgent()
+    document_content = qa_agent.read_file_content(document_path)
     if "项目阶段总结报告" not in document_content:
         raise AssertionError("文档内容没有写入原始需求。")
 

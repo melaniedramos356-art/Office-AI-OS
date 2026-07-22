@@ -1,4 +1,6 @@
 from pathlib import Path
+from xml.etree import ElementTree
+from zipfile import BadZipFile, ZipFile
 
 
 class QAAgent:
@@ -40,7 +42,7 @@ class QAAgent:
         if isinstance(original_task, str) and original_task.strip() not in file_content:
             problems.append("文件内容没有包含原始需求")
 
-        if file_path.suffix.lower() not in [".md", ".csv", ".txt"]:
+        if file_path.suffix.lower() not in [".md", ".csv", ".txt", ".docx"]:
             problems.append("文件类型暂未纳入当前检查范围")
 
         if problems:
@@ -53,4 +55,24 @@ class QAAgent:
         if file_path.suffix.lower() == ".csv":
             return file_path.read_text(encoding="utf-8-sig")
 
+        if file_path.suffix.lower() == ".docx":
+            return self.read_docx_content(file_path)
+
         return file_path.read_text(encoding="utf-8")
+
+    def read_docx_content(self, file_path):
+        try:
+            with ZipFile(file_path, "r") as docx_file:
+                document_xml = docx_file.read("word/document.xml")
+        except (BadZipFile, KeyError) as error:
+            raise OSError(f"无法读取 docx 内容：{error}")
+
+        root = ElementTree.fromstring(document_xml)
+        namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+        texts = []
+
+        for text_node in root.findall(".//w:t", namespace):
+            if text_node.text:
+                texts.append(text_node.text)
+
+        return "\n".join(texts)

@@ -16,7 +16,7 @@ python test_v02.py
 
 ## v0.3 Word Agent
 
-Word Agent 现在可以生成 Markdown 文档草稿。
+Word Agent 现在可以生成正式 `.docx` 文档草稿。
 
 测试命令：
 
