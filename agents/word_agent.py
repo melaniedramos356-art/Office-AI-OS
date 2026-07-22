@@ -4,13 +4,15 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.ai_output_utils import extract_json_data, has_forbidden_output_text, is_usable_model_generation
+from agents.generation_quality_guide import GenerationQualityGuide
 from models.model_router import ModelRouter
 
 
 class WordAgent:
-    def __init__(self, output_folder="outputs/word_documents", model_router=None):
+    def __init__(self, output_folder="outputs/word_documents", model_router=None, quality_guide=None):
         self.output_folder = Path(output_folder)
         self.model_router = model_router or ModelRouter()
+        self.quality_guide = quality_guide or GenerationQualityGuide()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -67,13 +69,15 @@ class WordAgent:
     def build_ai_document(self, user_task, document_type, base_sections):
         title = self.build_document_title(user_task, document_type)
         section_titles = [section_title for section_title, _ in base_sections]
+        quality_rules = self.quality_guide.build_prompt_rules("word")
         prompt = (
             f"需求：{user_task}\n"
             f"类型：{document_type}\n"
             f"标题：{title}\n"
             f"章节：{section_titles}\n"
+            f"制作技巧：\n{quality_rules}\n"
             "返回JSON：{\"title\":\"\",\"summary\":\"\",\"sections\":[{\"title\":\"\",\"content\":\"\"}]}\n"
-            "要求：章节标题必须完全按给定章节顺序；正文是可直接放进Word的成品内容；不要提示词、搜索词、占位、示例、草稿；每节120到260字。"
+            "要求：章节标题必须完全按给定章节顺序；正文是可直接放进Word的成品内容；语言要有层次、有对象感、有结论；不要提示词、搜索词、占位、示例、草稿；每节120到260字。"
         )
         generation = self.model_router.generate("word", prompt)
         if not is_usable_model_generation(generation):

@@ -477,6 +477,32 @@ memory/experience_library.md
 python test_web_case_agent.py
 ```
 
+## v0.8.1 Generation Quality Guide
+
+Generation Quality Guide 用来把制作技巧库真正接入 Word / PPT / Excel 生成流程。
+
+它会读取：
+
+```text
+memory/production_techniques.md
+```
+
+并把本板块技巧优先带入模型提示：
+
+```text
+Word：优先读取 word 制作技巧，再补充 shared 和 china 技巧
+PPT：优先读取 ppt 制作技巧，再补充 shared 和 china 技巧
+Excel：优先读取 excel 制作技巧，再补充 shared 和 china 技巧
+```
+
+这样真实 AI 模型生成内容时，会直接参考版面设计、文案生成、图片查找和数据表达技巧。
+
+测试命令：
+
+```bash
+python test_generation_quality_guide.py
+```
+
 ## v0.9 Office Panel Agent
 
 Office Panel Agent 是后续桌面 App 办公首页的后端雏形，用来输出办公功能卡片、按钮建议和每个按钮对应的命令。

@@ -4,13 +4,15 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.ai_output_utils import extract_json_data, has_forbidden_output_text, is_usable_model_generation
+from agents.generation_quality_guide import GenerationQualityGuide
 from models.model_router import ModelRouter
 
 
 class PPTAgent:
-    def __init__(self, output_folder="outputs/ppt_files", model_router=None):
+    def __init__(self, output_folder="outputs/ppt_files", model_router=None, quality_guide=None):
         self.output_folder = Path(output_folder)
         self.model_router = model_router or ModelRouter()
+        self.quality_guide = quality_guide or GenerationQualityGuide()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -64,13 +66,15 @@ class PPTAgent:
 
     def build_ai_slides(self, user_task, presentation_type, topic, base_slides):
         slide_titles = [slide["title"] for slide in base_slides]
+        quality_rules = self.quality_guide.build_prompt_rules("ppt")
         prompt = (
             f"需求：{user_task}\n"
             f"PPT类型：{presentation_type}\n"
             f"主题：{topic}\n"
             f"页面标题：{slide_titles}\n"
+            f"制作技巧：\n{quality_rules}\n"
             "返回JSON数组：[{\"title\":\"\",\"bullets\":[\"\",\"\",\"\"]}]\n"
-            "要求：必须包含封面、目录和给定页面标题；每页2到3条要点；内容可直接放进PPT；不要提示词、搜索词、占位、示例、草稿。"
+            "要求：必须包含封面、目录和给定页面标题；标题尽量写成结论式标题；每页2到3条要点；内容可直接放进PPT；不要提示词、搜索词、占位、示例、草稿。"
         )
         generation = self.model_router.generate("ppt", prompt)
         if not is_usable_model_generation(generation):

@@ -4,13 +4,15 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.ai_output_utils import extract_json_data, has_forbidden_output_text, is_usable_model_generation
+from agents.generation_quality_guide import GenerationQualityGuide
 from models.model_router import ModelRouter
 
 
 class ExcelAgent:
-    def __init__(self, output_folder="outputs/excel_files", model_router=None):
+    def __init__(self, output_folder="outputs/excel_files", model_router=None, quality_guide=None):
         self.output_folder = Path(output_folder)
         self.model_router = model_router or ModelRouter()
+        self.quality_guide = quality_guide or GenerationQualityGuide()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -100,13 +102,15 @@ class ExcelAgent:
 
     def build_ai_rows(self, user_task, table_type, table_topic):
         headers = self.build_headers(table_type)
+        quality_rules = self.quality_guide.build_prompt_rules("excel")
         prompt = (
             f"需求：{user_task}\n"
             f"表格类型：{table_type}\n"
             f"表格主题：{table_topic}\n"
             f"表头：{headers}\n"
+            f"制作技巧：\n{quality_rules}\n"
             "返回JSON：{\"rows\":[[\"字段1\",\"字段2\"],[\"数据1\",\"数据2\"]]}\n"
-            "要求：第一行必须是表格类型，第二行必须是表格主题，第三行空数组，第四行必须是给定表头；后面生成3到6行可直接查看的业务数据；不要提示词、搜索词、占位、示例、草稿、待采集、按实际、需补充。"
+            "要求：第一行必须是表格类型，第二行必须是表格主题，第三行空数组，第四行必须是给定表头；后面生成3到6行可直接查看的业务数据；字段口径要清楚，数据要能支撑后续分析；不要提示词、搜索词、占位、示例、草稿、待采集、按实际、需补充。"
         )
         generation = self.model_router.generate("excel", prompt)
         if not is_usable_model_generation(generation):

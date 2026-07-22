@@ -19,9 +19,9 @@ class ProductionTechniqueLibrary:
         shared_techniques = self.extract_section_techniques(technique_content, "shared")
         china_techniques = self.extract_section_techniques(technique_content, "china")
         section_techniques = self.extract_section_techniques(technique_content, section_name)
-        merged_techniques = shared_techniques + china_techniques + section_techniques
+        merged_techniques = section_techniques + shared_techniques + china_techniques
 
-        return merged_techniques[:8] or default_techniques
+        return self.unique_texts(merged_techniques)[:8] or default_techniques
 
     def extract_section_techniques(self, technique_content, section_name):
         target_heading = f"## {section_name} 制作技巧"
@@ -66,4 +66,18 @@ class ProductionTechniqueLibrary:
             ],
         }
 
-        return (shared_techniques + section_techniques.get(section_name, []))[:8]
+        return self.unique_texts(section_techniques.get(section_name, []) + shared_techniques)[:8]
+
+    def unique_texts(self, texts):
+        unique_results = []
+        seen_texts = set()
+        for text in texts:
+            if not isinstance(text, str):
+                continue
+            cleaned_text = " ".join(text.strip().split())
+            key = cleaned_text.lower()
+            if not cleaned_text or key in seen_texts:
+                continue
+            seen_texts.add(key)
+            unique_results.append(cleaned_text)
+        return unique_results
