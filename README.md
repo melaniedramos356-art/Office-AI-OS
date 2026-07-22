@@ -61,3 +61,22 @@ python test_ppt_agent.py
 ```text
 outputs/ppt_outlines/
 ```
+
+## v0.4 QA Agent
+
+QA Agent 现在可以在生成文件后自动做基础质量检查。
+
+检查内容：
+
+```text
+文件是否存在
+文件是否为空
+文件是否包含原始需求
+文件类型是否在当前支持范围内
+```
+
+测试命令：
+
+```bash
+python test_qa_agent.py
+```

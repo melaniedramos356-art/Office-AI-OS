@@ -1,5 +1,6 @@
 from agents.excel_agent import ExcelAgent
 from agents.ppt_agent import PPTAgent
+from agents.qa_agent import QAAgent
 from agents.word_agent import WordAgent
 
 
@@ -8,6 +9,7 @@ class ChiefCoordinator:
         self.word_agent = WordAgent()
         self.excel_agent = ExcelAgent()
         self.ppt_agent = PPTAgent()
+        self.qa_agent = QAAgent()
 
     def handle_task(self, user_task):
         if not isinstance(user_task, str):
@@ -18,7 +20,10 @@ class ChiefCoordinator:
             return "任务内容不能为空。"
 
         agent = self.choose_agent(cleaned_task)
-        return agent.handle(cleaned_task)
+        task_result = agent.handle(cleaned_task)
+        qa_result = self.qa_agent.check_task_result(task_result, cleaned_task)
+
+        return f"{task_result}\n\n{qa_result}"
 
     def choose_agent(self, user_task):
         task_text = user_task.lower()
