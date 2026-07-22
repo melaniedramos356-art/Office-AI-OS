@@ -44,6 +44,18 @@ def main():
     if "DeepSeek 字段建议" not in table_content:
         raise AssertionError("Excel 表格没有写入 DeepSeek 字段建议。")
 
+    if "表格使用说明" not in table_content:
+        raise AssertionError("Excel 表格没有写入表格使用说明。")
+
+    if "数据填写规则" not in table_content:
+        raise AssertionError("Excel 表格没有写入数据填写规则。")
+
+    if "推荐分析图表" not in table_content:
+        raise AssertionError("Excel 表格没有写入推荐分析图表。")
+
+    if "质量检查清单" not in table_content:
+        raise AssertionError("Excel 表格没有写入质量检查清单。")
+
     if "数据分析网站灵感库" not in table_content:
         raise AssertionError("Excel 表格没有写入数据分析网站灵感库。")
 

@@ -200,6 +200,8 @@ Excel Agent 已接入 Model Router。当前会优先使用 DeepSeek 生成字段
 
 Excel Agent 已增加数据分析网站灵感库。生成 `.xlsx` 时会写入 Tableau Public、Power BI Data Stories、Looker Studio Gallery、Flourish Examples 等数据分析参考来源。
 
+Excel Agent 已增加表格使用说明、数据填写规则、推荐分析图表和质量检查清单，方便把表格继续完善成数据分析看板或汇报材料。
+
 PPT Agent 已增加目录页和 AI 结构建议页。当前在 Kimi / Doubao 未接入前，会先写入本地兜底结构建议。
 
 Word Agent 已增加文档摘要、AI 结构建议和灵感素材查找建议。当前在 Kimi 未接入前，会先写入本地兜底结构建议。

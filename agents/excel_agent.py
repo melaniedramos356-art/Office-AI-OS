@@ -92,6 +92,20 @@ class ExcelAgent:
         return self.add_generation_advice_rows(rows)
 
     def add_generation_advice_rows(self, rows):
+        table_type = self.extract_table_type(rows)
+
+        rows.extend([[], ["表格使用说明", "内容"]])
+        rows.extend(self.build_usage_rows(table_type))
+
+        rows.extend([[], ["数据填写规则", "说明"]])
+        rows.extend(self.build_data_rule_rows(table_type))
+
+        rows.extend([[], ["推荐分析图表", "适用场景"]])
+        rows.extend(self.build_chart_rows(table_type))
+
+        rows.extend([[], ["质量检查清单", "检查要求"]])
+        rows.extend(self.build_quality_check_rows(table_type))
+
         rows.extend([[], ["素材库生成建议", "说明"]])
         for advice in self.technique_library.get_advice("excel"):
             rows.append(["建议", advice])
@@ -108,6 +122,83 @@ class ExcelAgent:
         rows.extend([[], ["数据分析搜索词", "关键词"]])
         rows.extend(self.data_analysis_inspiration_library.build_keyword_rows(user_task))
         return rows
+
+    def extract_table_type(self, rows):
+        for row in rows:
+            if len(row) >= 2 and row[0] == "表格类型":
+                return row[1]
+        return "通用表格"
+
+    def build_usage_rows(self, table_type):
+        return [
+            ["使用说明", f"这是一份{table_type}草稿，先替换示例数据，再补充真实业务信息。"],
+            ["使用说明", "填写完成后，优先检查空值、重复值和异常数值。"],
+            ["使用说明", "如果要继续做分析，可以基于推荐图表生成看板或汇报材料。"],
+        ]
+
+    def build_data_rule_rows(self, table_type):
+        common_rules = [
+            ["规则", "不要删除表头，新增字段请放在现有字段右侧。"],
+            ["规则", "日期、金额、状态、负责人等字段要保持格式一致。"],
+            ["规则", "不确定的信息先写入备注，不要混入主要数据列。"],
+        ]
+
+        if table_type == "客户信息表":
+            return common_rules + [
+                ["规则", "客户名称不要重复，电话和联系人缺失时必须在备注中说明。"],
+                ["规则", "跟进状态建议固定为：待跟进、跟进中、已成交、已流失。"],
+            ]
+
+        if table_type == "销售报表":
+            return common_rules + [
+                ["规则", "销售额、成本、利润必须使用数字，不要写入单位文字。"],
+                ["规则", "利润建议按销售额减成本计算，异常值要单独标注。"],
+            ]
+
+        if table_type == "数据统计表":
+            return common_rules + [
+                ["规则", "数值列只填写数字，文字说明放入备注列。"],
+                ["规则", "合计行需要和明细数据保持一致。"],
+            ]
+
+        return common_rules
+
+    def build_chart_rows(self, table_type):
+        if table_type == "客户信息表":
+            return [
+                ["柱状图", "统计不同跟进状态下的客户数量。"],
+                ["饼图", "查看客户状态占比。"],
+                ["明细表", "筛选待跟进客户，方便安排下一步动作。"],
+            ]
+
+        if table_type == "销售报表":
+            return [
+                ["折线图", "查看销售额随日期变化的趋势。"],
+                ["柱状图", "对比不同产品的销售额、成本和利润。"],
+                ["排行榜", "找出贡献最高的产品或业务项。"],
+            ]
+
+        if table_type == "数据统计表":
+            return [
+                ["柱状图", "对比不同项目的数值大小。"],
+                ["折线图", "如果数据有时间顺序，用于观察趋势。"],
+                ["异常值标记", "找出明显偏高或偏低的数据。"],
+            ]
+
+        return [
+            ["柱状图", "对比不同事项或分类的数量。"],
+            ["状态统计", "统计未开始、进行中、已完成事项。"],
+            ["明细表", "保留原始记录，方便后续检查。"],
+        ]
+
+    def build_quality_check_rows(self, table_type):
+        return [
+            ["检查", "原始需求是否保留。"],
+            ["检查", f"{table_type} 的表头是否和实际业务一致。"],
+            ["检查", "示例数据是否已经替换为真实数据。"],
+            ["检查", "关键字段是否存在空值、重复值或格式混乱。"],
+            ["检查", "推荐图表是否能支撑最终要表达的结论。"],
+        ]
 
     def build_model_advice(self, rows):
         user_task = self.extract_original_task(rows)
