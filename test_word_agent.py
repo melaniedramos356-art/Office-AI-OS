@@ -8,6 +8,7 @@ from agents.qa_agent import QAAgent
 def main():
     test_word_agent_builds_report()
     test_word_agent_builds_student_summer_safety_script()
+    test_word_agent_builds_low_altitude_capital_report()
 
 
 def test_word_agent_builds_report():
@@ -45,26 +46,7 @@ def test_word_agent_builds_report():
     if "文档摘要" not in document_content:
         raise AssertionError("Word 文档没有写入文档摘要。")
 
-    if "AI 结构建议" not in document_content:
-        raise AssertionError("Word 文档没有写入 AI 结构建议。")
-
-    if "通用制作技巧" not in document_content:
-        raise AssertionError("Word 文档没有写入通用制作技巧。")
-
-    if "版面设计" not in document_content or "文案生成" not in document_content:
-        raise AssertionError("Word 文档没有写入版面设计和文案生成技巧。")
-
-    if "图片查找" not in document_content or "图片生成" not in document_content:
-        raise AssertionError("Word 文档没有写入图片相关制作技巧。")
-
-    if "灵感素材查找建议" not in document_content:
-        raise AssertionError("Word 文档没有写入灵感素材查找建议。")
-
-    if "Dribbble" not in document_content or "Behance" not in document_content:
-        raise AssertionError("Word 文档没有写入核心灵感网站。")
-
-    if "素材库生成建议" not in document_content:
-        raise AssertionError("Word 文档没有写入素材库生成建议。")
+    assert_no_prompt_like_content(document_content)
 
     print(f"测试通过：Word Agent 已生成文件 {document_path}")
 
@@ -93,7 +75,35 @@ def test_word_agent_builds_student_summer_safety_script():
     if "请在这里填写" in document_content:
         raise AssertionError("大学生暑假安全班会文案不应该再出现模板占位文字。")
 
+    assert_no_prompt_like_content(document_content)
+
     print(f"测试通过：Word Agent 已生成大学生暑假安全班会文案 {document_path}")
+
+
+def test_word_agent_builds_low_altitude_capital_report():
+    test_output_folder = "outputs/test_word_documents"
+    agent = WordAgent(output_folder=test_output_folder)
+    result = agent.handle("生成关于资本赋能低空经济产业发展研究的 Word 文档")
+    document_path = extract_file_path(result)
+
+    qa_agent = QAAgent()
+    document_content = qa_agent.read_file_content(document_path)
+    required_texts = [
+        "《资本赋能低空经济产业发展研究》",
+        "含义解析",
+        "江西低空经济发展基础",
+        "资本赋能低空经济的主要痛点",
+        "资本赋能路径建议",
+        "结论",
+    ]
+
+    for text in required_texts:
+        if text not in document_content:
+            raise AssertionError(f"低空经济研究报告缺少内容：{text}")
+
+    assert_no_prompt_like_content(document_content)
+
+    print(f"测试通过：Word Agent 已生成低空经济研究报告 {document_path}")
 
 
 def extract_file_path(task_result):
@@ -101,6 +111,26 @@ def extract_file_path(task_result):
         if line.startswith("文件位置："):
             return Path(line.replace("文件位置：", "", 1).strip())
     raise AssertionError(f"结果中没有文件位置：{task_result}")
+
+
+def assert_no_prompt_like_content(document_content):
+    forbidden_texts = [
+        "AI 结构建议",
+        "通用制作技巧",
+        "灵感素材查找建议",
+        "素材库生成建议",
+        "搜索词",
+        "请在这里填写",
+        "请替换",
+        "示例",
+        "Dribbble",
+        "Behance",
+        "图片生成提示词",
+    ]
+
+    for text in forbidden_texts:
+        if text in document_content:
+            raise AssertionError(f"Word 成品文件不应该包含提示词类内容：{text}")
 
 
 if __name__ == "__main__":

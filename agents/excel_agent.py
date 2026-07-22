@@ -3,19 +3,13 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from agents.data_analysis_inspiration_library import DataAnalysisInspirationLibrary
 from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
-from agents.production_technique_library import ProductionTechniqueLibrary
-from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
 
 
 class ExcelAgent:
     def __init__(self, output_folder="outputs/excel_files"):
         self.output_folder = Path(output_folder)
-        self.data_analysis_inspiration_library = DataAnalysisInspirationLibrary()
-        self.production_technique_library = ProductionTechniqueLibrary()
-        self.technique_library = TechniqueLibrary()
         self.model_router = ModelRouter()
 
     def handle(self, user_task):
@@ -58,9 +52,9 @@ class ExcelAgent:
                 ["原始需求", user_task],
                 [],
                 ["项目", "数值", "备注"],
-                ["示例项目A", "0", "请替换为真实数据"],
-                ["示例项目B", "0", "请替换为真实数据"],
-                ["合计", "0", "请填写计算结果"],
+                ["核心指标", "0", "待采集"],
+                ["阶段成果", "0", "待采集"],
+                ["合计", "0", "按实际数据更新"],
             ]
             return self.add_generation_advice_rows(rows)
 
@@ -70,8 +64,8 @@ class ExcelAgent:
                 ["原始需求", user_task],
                 [],
                 ["客户名称", "联系人", "电话", "跟进状态", "备注"],
-                ["示例客户A", "", "", "待跟进", "请替换为真实客户"],
-                ["示例客户B", "", "", "待跟进", "请替换为真实客户"],
+                ["重点客户一", "", "", "待跟进", "需补充真实联系人"],
+                ["重点客户二", "", "", "待跟进", "需补充真实联系人"],
             ]
             return self.add_generation_advice_rows(rows)
 
@@ -81,7 +75,7 @@ class ExcelAgent:
                 ["原始需求", user_task],
                 [],
                 ["日期", "产品", "销售额", "成本", "利润", "备注"],
-                ["2026-07-22", "示例产品", "0", "0", "0", "请替换为真实数据"],
+                ["2026-07-22", "核心产品", "0", "0", "0", "按实际销售数据更新"],
             ]
             return self.add_generation_advice_rows(rows)
 
@@ -90,7 +84,7 @@ class ExcelAgent:
             ["原始需求", user_task],
             [],
             ["序号", "事项", "负责人", "状态", "备注"],
-            ["1", "示例事项", "", "未开始", "请替换为真实内容"],
+            ["1", "核心事项", "", "未开始", "按实际任务更新"],
         ]
         return self.add_generation_advice_rows(rows)
 
@@ -109,25 +103,11 @@ class ExcelAgent:
         rows.extend([[], ["质量检查清单", "检查要求"]])
         rows.extend(self.build_quality_check_rows(table_type))
 
-        rows.extend([[], ["通用制作技巧", "说明"]])
-        for technique in self.production_technique_library.get_techniques("excel"):
-            rows.append(["技巧", technique])
-
-        rows.extend([[], ["素材库生成建议", "说明"]])
-        for advice in self.technique_library.get_advice("excel"):
-            rows.append(["建议", advice])
-
         model_advice = self.build_model_advice(rows)
-        rows.extend([[], ["DeepSeek 字段建议", "说明"]])
+        rows.extend([[], ["字段完善方向", "说明"]])
         for advice in model_advice:
-            rows.append(["模型建议", advice])
+            rows.append(["方向", advice])
 
-        user_task = self.extract_original_task(rows)
-        rows.extend([[], ["数据分析网站灵感库", "类型", "用途", "链接"]])
-        rows.extend(self.data_analysis_inspiration_library.build_source_rows(user_task))
-
-        rows.extend([[], ["数据分析搜索词", "关键词"]])
-        rows.extend(self.data_analysis_inspiration_library.build_keyword_rows(user_task))
         return rows
 
     def extract_table_type(self, rows):
@@ -138,7 +118,7 @@ class ExcelAgent:
 
     def build_usage_rows(self, table_type):
         return [
-            ["使用说明", f"这是一份{table_type}草稿，先替换示例数据，再补充真实业务信息。"],
+            ["使用说明", f"这是一份{table_type}，用于记录和整理当前办公数据。"],
             ["使用说明", "填写完成后，优先检查空值、重复值和异常数值。"],
             ["使用说明", "如果要继续做分析，可以基于推荐图表生成看板或汇报材料。"],
         ]
@@ -153,13 +133,13 @@ class ExcelAgent:
         if table_type == "客户信息表":
             return common_rules + [
                 ["规则", "客户名称不要重复，电话和联系人缺失时必须在备注中说明。"],
-                ["规则", "跟进状态建议固定为：待跟进、跟进中、已成交、已流失。"],
+                ["规则", "跟进状态固定为：待跟进、跟进中、已成交、已流失。"],
             ]
 
         if table_type == "销售报表":
             return common_rules + [
                 ["规则", "销售额、成本、利润必须使用数字，不要写入单位文字。"],
-                ["规则", "利润建议按销售额减成本计算，异常值要单独标注。"],
+                ["规则", "利润按销售额减成本计算，异常值要单独标注。"],
             ]
 
         if table_type == "数据统计表":
@@ -202,7 +182,7 @@ class ExcelAgent:
         return [
             ["检查", "原始需求是否保留。"],
             ["检查", f"{table_type} 的表头是否和实际业务一致。"],
-            ["检查", "示例数据是否已经替换为真实数据。"],
+            ["检查", "关键业务数据是否已经补充完整。"],
             ["检查", "关键字段是否存在空值、重复值或格式混乱。"],
             ["检查", "推荐图表是否能支撑最终要表达的结论。"],
         ]
@@ -210,8 +190,8 @@ class ExcelAgent:
     def build_model_advice(self, rows):
         user_task = self.extract_original_task(rows)
         prompt = (
-            "请为下面的 Excel 办公表格生成 3 条字段设计建议。"
-            "要求：只输出 3 行，每行一条建议，不要输出长篇解释。\n\n"
+            "请为下面的 Excel 办公表格生成 3 条字段完善方向。"
+            "要求：只输出 3 行，每行一条方向，不要输出长篇解释。\n\n"
             f"用户需求：{user_task}"
         )
         generation = self.model_router.generate("excel", prompt)

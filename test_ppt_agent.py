@@ -41,26 +41,19 @@ def main():
     if "目录" not in presentation_content:
         raise AssertionError("PPT 文件没有写入目录页。")
 
-    if "AI 结构建议" not in presentation_content:
-        raise AssertionError("PPT 文件没有写入 AI 结构建议。")
-
-    if "通用制作技巧" not in presentation_content:
-        raise AssertionError("PPT 文件没有写入通用制作技巧。")
-
-    if "版面设计" not in presentation_content or "文案生成" not in presentation_content:
-        raise AssertionError("PPT 文件没有写入版面设计和文案生成技巧。")
-
-    if "图片查找" not in presentation_content or "图片生成" not in presentation_content:
-        raise AssertionError("PPT 文件没有写入图片相关制作技巧。")
-
-    if "灵感素材查找建议" not in presentation_content:
-        raise AssertionError("PPT 文件没有写入灵感素材查找建议。")
-
-    if "Dribbble" not in presentation_content or "Behance" not in presentation_content:
-        raise AssertionError("PPT 文件没有写入核心灵感网站。")
-
-    if "素材库生成建议" not in presentation_content:
-        raise AssertionError("PPT 文件没有写入素材库生成建议。")
+    forbidden_texts = [
+        "AI 结构建议",
+        "通用制作技巧",
+        "灵感素材查找建议",
+        "素材库生成建议",
+        "搜索词",
+        "提示词",
+        "请在这里填写",
+        "请替换",
+    ]
+    for text in forbidden_texts:
+        if text in presentation_content:
+            raise AssertionError(f"PPT 成品文件不应该包含提示词类内容：{text}")
 
     print(f"测试通过：PPT Agent 已生成文件 {presentation_path}")
 

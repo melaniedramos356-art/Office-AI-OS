@@ -3,19 +3,13 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from agents.inspiration_library import InspirationLibrary
 from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
-from agents.production_technique_library import ProductionTechniqueLibrary
-from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
 
 
 class PPTAgent:
     def __init__(self, output_folder="outputs/ppt_files"):
         self.output_folder = Path(output_folder)
-        self.inspiration_library = InspirationLibrary()
-        self.production_technique_library = ProductionTechniqueLibrary()
-        self.technique_library = TechniqueLibrary()
         self.model_router = ModelRouter()
 
     def handle(self, user_task):
@@ -57,37 +51,9 @@ class PPTAgent:
         slide_data = [
             {
                 "title": f"{presentation_type}",
-                "bullets": [user_task, "自动生成的演示稿草稿", "后续可继续补充真实数据和图片"],
+                "bullets": [user_task, "目标：清晰说明背景、重点内容和下一步安排"],
             }
         ] + [agenda_slide] + slides
-
-        slide_data.append(
-            {
-                "title": "AI 结构建议",
-                "bullets": self.build_model_advice(user_task, presentation_type, slides),
-            }
-        )
-
-        slide_data.append(
-            {
-                "title": "通用制作技巧",
-                "bullets": self.production_technique_library.get_techniques("ppt"),
-            }
-        )
-
-        slide_data.append(
-            {
-                "title": "灵感素材查找建议",
-                "bullets": self.build_inspiration_advice(user_task),
-            }
-        )
-
-        slide_data.append(
-            {
-                "title": "素材库生成建议",
-                "bullets": self.technique_library.get_advice("ppt"),
-            }
-        )
         return slide_data
 
     def build_agenda_slide(self, slides):
@@ -126,19 +92,6 @@ class PPTAgent:
             "每页只保留 3 个以内重点，避免一页塞太多文字。",
             "关键页预留图片、图表或案例位置，方便后续增强视觉效果。",
         ]
-
-    def build_inspiration_advice(self, user_task):
-        source_lines = self.inspiration_library.build_source_lines(user_task, limit=5)
-        keyword_lines = self.inspiration_library.build_search_keywords(user_task)[:3]
-        advice = []
-
-        for source_line in source_lines:
-            advice.append(source_line)
-
-        for keyword in keyword_lines:
-            advice.append(f"搜索词：{keyword}")
-
-        return advice
 
     def detect_presentation_type(self, user_task):
         if "销售" in user_task or "营收" in user_task or "收入" in user_task:

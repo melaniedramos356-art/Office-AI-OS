@@ -38,12 +38,6 @@ def main():
     if "客户数据" not in table_content:
         raise AssertionError("表格内容没有写入原始需求。")
 
-    if "素材库生成建议" not in table_content:
-        raise AssertionError("Excel 表格没有写入素材库生成建议。")
-
-    if "DeepSeek 字段建议" not in table_content:
-        raise AssertionError("Excel 表格没有写入 DeepSeek 字段建议。")
-
     if "表格使用说明" not in table_content:
         raise AssertionError("Excel 表格没有写入表格使用说明。")
 
@@ -56,23 +50,23 @@ def main():
     if "质量检查清单" not in table_content:
         raise AssertionError("Excel 表格没有写入质量检查清单。")
 
-    if "通用制作技巧" not in table_content:
-        raise AssertionError("Excel 表格没有写入通用制作技巧。")
+    if "字段完善方向" not in table_content:
+        raise AssertionError("Excel 表格没有写入字段完善方向。")
 
-    if "版面设计" not in table_content or "文案生成" not in table_content:
-        raise AssertionError("Excel 表格没有写入版面设计和文案生成技巧。")
-
-    if "图片查找" not in table_content or "图片生成" not in table_content:
-        raise AssertionError("Excel 表格没有写入图片相关制作技巧。")
-
-    if "数据分析网站灵感库" not in table_content:
-        raise AssertionError("Excel 表格没有写入数据分析网站灵感库。")
-
-    if "Tableau Public" not in table_content or "Power BI Data Stories Gallery" not in table_content:
-        raise AssertionError("Excel 表格没有写入核心数据分析灵感网站。")
-
-    if "Flourish Examples" not in table_content:
-        raise AssertionError("Excel 表格没有写入图表灵感网站。")
+    forbidden_texts = [
+        "素材库生成建议",
+        "DeepSeek 字段建议",
+        "通用制作技巧",
+        "数据分析网站灵感库",
+        "搜索词",
+        "提示词",
+        "请在这里填写",
+        "请替换",
+        "示例",
+    ]
+    for text in forbidden_texts:
+        if text in table_content:
+            raise AssertionError(f"Excel 成品文件不应该包含提示词类内容：{text}")
 
     print(f"测试通过：Excel Agent 已生成文件 {table_path}")
 

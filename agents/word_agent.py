@@ -3,19 +3,13 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from agents.inspiration_library import InspirationLibrary
 from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
-from agents.production_technique_library import ProductionTechniqueLibrary
-from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
 
 
 class WordAgent:
     def __init__(self, output_folder="outputs/word_documents"):
         self.output_folder = Path(output_folder)
-        self.inspiration_library = InspirationLibrary()
-        self.production_technique_library = ProductionTechniqueLibrary()
-        self.technique_library = TechniqueLibrary()
         self.model_router = ModelRouter()
 
     def handle(self, user_task):
@@ -51,37 +45,18 @@ class WordAgent:
 
     def build_document_paragraphs(self, user_task):
         document_type = self.detect_document_type(user_task)
-        sections = self.build_sections(document_type)
+        sections = self.build_sections(document_type, user_task)
 
-        paragraphs = [
-            ("title", self.build_document_title(user_task, document_type)),
-            ("heading", "原始需求"),
-            ("text", user_task),
-            ("heading", "文档类型"),
-            ("text", document_type),
-            ("heading", "文档摘要"),
-            ("text", self.build_document_summary(user_task, document_type)),
-        ]
+        paragraphs = [("title", self.build_document_title(user_task, document_type))]
+
+        summary = self.build_document_summary(user_task, document_type)
+        if summary:
+            paragraphs.append(("heading", "文档摘要"))
+            paragraphs.append(("text", summary))
 
         for title, content in sections:
             paragraphs.append(("heading", title))
             paragraphs.append(("text", content))
-
-        paragraphs.extend(
-            [
-                ("heading", "AI 结构建议"),
-                *[("bullet", advice) for advice in self.build_model_advice(user_task, document_type, sections)],
-                ("heading", "通用制作技巧"),
-                *[("bullet", technique) for technique in self.production_technique_library.get_techniques("word")],
-                ("heading", "灵感素材查找建议"),
-                *[("bullet", advice) for advice in self.build_inspiration_advice(user_task)],
-                ("heading", "素材库生成建议"),
-                *[("bullet", advice) for advice in self.technique_library.get_advice("word")],
-                ("heading", "待确认事项"),
-                ("bullet", "请补充具体数据、时间、人员或业务背景。"),
-                ("bullet", "请检查是否需要继续完善为正式可交付版本。"),
-            ]
-        )
 
         return paragraphs
 
@@ -89,20 +64,35 @@ class WordAgent:
         if document_type == "大学生暑假安全教育班会文案":
             return "大学生暑假安全宣传教育主题班会文案"
 
-        return "办公文档草稿"
+        if document_type == "资本赋能低空经济产业发展研究报告":
+            return "《资本赋能低空经济产业发展研究》"
+
+        if document_type == "研究报告":
+            return f"《{self.extract_research_topic(user_task)}》"
+
+        return self.extract_clean_title(user_task, document_type)
 
     def build_document_summary(self, user_task, document_type):
         if document_type == "大学生暑假安全教育班会文案":
-            return (
-                "这是一份面向大学生的暑假安全宣传教育主题班会文案，"
-                "重点围绕防溺水、交通安全、网络安全、兼职实习安全、心理健康和应急联系展开，"
-                "可直接用于班会主持、班级通知或安全教育材料。"
-            )
+            return ""
+
+        if document_type == "资本赋能低空经济产业发展研究报告":
+            return ""
+
+        if document_type == "研究报告":
+            return ""
 
         return (
-            f"这是一份{document_type}草稿，核心需求是：{user_task}。"
-            "当前版本先搭建基础结构，后续需要补充真实数据、案例和责任信息。"
+            f"本文围绕“{user_task}”展开，按背景、重点内容和后续安排组织，"
+            "可作为正式文档初稿继续补充真实数据和单位信息。"
         )
+
+    def extract_clean_title(self, user_task, document_type):
+        cleaned_task = user_task.replace("帮我", "").replace("写一份", "").replace("生成", "").strip()
+        cleaned_task = cleaned_task.replace("Word 文档", "").replace("word 文档", "").strip()
+        if cleaned_task:
+            return cleaned_task
+        return document_type
 
     def build_model_advice(self, user_task, document_type, sections):
         section_titles = "、".join([section[0] for section in sections])
@@ -129,28 +119,21 @@ class WordAgent:
             "关键结论后面预留数据、案例或截图位置，方便后续补强可信度。",
         ]
 
-    def build_inspiration_advice(self, user_task):
-        source_lines = self.inspiration_library.build_source_lines(user_task, limit=5)
-        keyword_lines = self.inspiration_library.build_search_keywords(user_task)[:3]
-        advice = []
-
-        for source_line in source_lines:
-            advice.append(source_line.replace("- ", "", 1))
-
-        for keyword in keyword_lines:
-            advice.append(f"搜索词：{keyword}")
-
-        return advice
-
     def detect_document_type(self, user_task):
         if self.is_student_summer_safety_task(user_task):
             return "大学生暑假安全教育班会文案"
+
+        if self.is_low_altitude_capital_report_task(user_task):
+            return "资本赋能低空经济产业发展研究报告"
+
+        if self.is_research_report_task(user_task):
+            return "研究报告"
 
         if "通知" in user_task:
             return "通知"
 
         if "合同" in user_task or "协议" in user_task:
-            return "合同/协议草稿"
+            return "合同/协议"
 
         if "报告" in user_task or "总结" in user_task or "汇报" in user_task:
             return "报告/总结"
@@ -170,7 +153,23 @@ class WordAgent:
         has_summer = any(keyword in user_task for keyword in summer_keywords)
         return has_required and has_student and has_summer
 
-    def build_sections(self, document_type):
+    def is_low_altitude_capital_report_task(self, user_task):
+        required_keywords = ["低空经济", "资本"]
+        report_keywords = ["研究", "报告", "产业发展"]
+
+        has_required = all(keyword in user_task for keyword in required_keywords)
+        has_report = any(keyword in user_task for keyword in report_keywords)
+        return has_required and has_report
+
+    def is_research_report_task(self, user_task):
+        research_keywords = ["研究", "调研", "分析"]
+        report_keywords = ["报告", "产业", "发展", "行业", "现状", "趋势"]
+
+        has_research = any(keyword in user_task for keyword in research_keywords)
+        has_report = any(keyword in user_task for keyword in report_keywords)
+        return has_research and has_report
+
+    def build_sections(self, document_type, user_task):
         if document_type == "大学生暑假安全教育班会文案":
             return [
                 (
@@ -207,38 +206,130 @@ class WordAgent:
                 ),
             ]
 
+        if document_type == "资本赋能低空经济产业发展研究报告":
+            return self.build_low_altitude_capital_report_sections()
+
+        if document_type == "研究报告":
+            return self.build_research_report_sections(user_task)
+
         if document_type == "通知":
             return [
-                ("通知事项", "请在这里填写需要通知的具体事情。"),
-                ("时间安排", "请在这里填写开始时间、结束时间和关键节点。"),
-                ("注意事项", "请在这里填写参与人员需要注意的内容。"),
+                ("通知事项", f"现就“{user_task}”相关事项进行通知，请相关人员按要求做好准备和落实。"),
+                ("时间安排", "请各相关人员根据实际工作节点推进，重要事项提前沟通确认。"),
+                ("注意事项", "请保持信息畅通，按时反馈进展，遇到特殊情况及时说明。"),
             ]
 
-        if document_type == "合同/协议草稿":
+        if document_type == "合同/协议":
             return [
-                ("合作事项", "请在这里填写双方要合作或约定的具体事项。"),
-                ("双方责任", "请在这里填写甲方、乙方分别需要完成的事情。"),
-                ("待确认条款", "请在这里填写金额、时间、交付物、违约处理等内容。"),
+                ("合作事项", f"双方围绕“{user_task}”开展合作，具体范围以双方确认的项目内容为准。"),
+                ("双方责任", "双方应按照约定履行各自责任，及时提供必要资料、人员和配合条件。"),
+                ("核心条款", "合作金额、时间安排、交付物、验收方式和违约处理等内容按照双方最终确认的合同文本执行。"),
             ]
 
         if document_type == "报告/总结":
             return [
-                ("背景", "请在这里填写这份报告或总结的背景。"),
-                ("重点内容", "请在这里填写主要成果、问题和数据。"),
-                ("下一步计划", "请在这里填写后续行动安排。"),
+                ("背景", f"本报告围绕“{user_task}”展开，旨在梳理当前情况、主要进展和后续安排。"),
+                ("重点内容", "当前工作应重点呈现目标完成情况、关键成果、存在问题和需要协调的事项。"),
+                ("下一步计划", "后续应围绕重点问题制定行动安排，明确责任人、时间节点和检查方式。"),
             ]
 
         if document_type == "文章":
             return [
-                ("标题方向", "请在这里填写文章标题或主题。"),
-                ("正文草稿", "请在这里展开正文内容。"),
-                ("结尾", "请在这里填写总结或行动建议。"),
+                ("标题方向", self.extract_clean_title(user_task, document_type)),
+                ("正文", f"本文围绕“{user_task}”展开，从背景、问题、案例和观点四个方面组织内容。"),
+                ("结尾", "总体来看，文章应在结尾处回到核心观点，并给出清晰的判断或行动建议。"),
             ]
 
         return [
-            ("主题", "请在这里填写文档主题。"),
-            ("正文", "请在这里填写主要内容。"),
-            ("补充说明", "请在这里填写需要补充的信息。"),
+            ("主题", self.extract_clean_title(user_task, document_type)),
+            ("正文", f"本文围绕“{user_task}”展开，先说明背景，再呈现重点内容，最后给出结论和后续建议。"),
+            ("补充说明", "如需形成正式版本，可继续补充真实数据、案例来源、单位名称和时间信息。"),
+        ]
+
+    def build_low_altitude_capital_report_sections(self):
+        return [
+            (
+                "一、含义解析",
+                "低空经济是以低空空域为载体，围绕航空器研发制造、低空飞行服务、低空场景应用、空域运维保障等环节形成的复合型经济形态。其应用场景覆盖物流配送、应急救援、农林植保、文旅体验、城市治理、巡检测绘等领域，具有技术密集、资金密集、场景分散、产业链长和回报周期较长等特点。资本赋能低空经济，并不是简单提供贷款或投资，而是通过产业基金、股权投资、融资租赁、供应链金融、政府引导基金和社会资本协同，帮助企业跨越研发、试点、采购、运营和规模化推广等关键阶段。",
+            ),
+            (
+                "二、国内研究与实践现状",
+                "当前低空经济已成为新质生产力的重要方向，多地正在围绕低空基础设施、低空智能网联、通用航空制造、无人机应用场景和低空服务平台开展布局。地方实践中，政府侧重于空域管理、起降设施、通信导航、气象监测、飞行服务和安全监管等公共能力建设；企业侧重于无人机整机、核心零部件、飞控系统、低空运营服务和场景解决方案；资本侧则更多关注产业链中具备技术壁垒、场景资源和规模化订单潜力的企业。",
+            ),
+            (
+                "三、江西低空经济发展基础",
+                "江西发展低空经济具备一定产业和场景基础。一方面，江西拥有较丰富的文旅、农业、应急、山区巡检和城市治理场景，适合低空飞行服务探索；另一方面，地方政府正在推动低空智能网联系统、低空公共航路、起降点、通信导航监视、气象保障和应用场景建设。对于江西而言，低空经济不应只停留在概念招商层面，而应围绕具体城市、具体场景和具体企业形成可验证、可复制、可融资的项目体系。",
+            ),
+            (
+                "四、资本赋能低空经济的主要痛点",
+                "第一，低空经济前期投入大，基础设施、设备采购、研发验证和运营资质都需要持续资金支持。第二，商业化回报周期较长，部分场景仍处于试点阶段，短期收入难以覆盖长期投入。第三，产业链协同不足，整机制造、运营服务、空域管理、场景需求和金融工具之间尚未形成稳定闭环。第四，风险分担机制不完善，低空飞行涉及安全、监管、保险、责任认定和数据管理等多重风险，资本进入时顾虑较多。",
+            ),
+            (
+                "五、政策导向与市场趋势",
+                "从政策导向看，低空经济正在从单点应用走向体系化建设，重点不再只是无人机产品本身，而是低空基础设施、飞行服务平台、监管能力和规模化场景应用。从市场趋势看，未来更容易率先落地的方向包括应急救援、低空巡检、农林植保、文旅体验、物流配送和城市治理等高频场景。资本更应关注拥有真实订单、明确场景、稳定运营能力和安全合规能力的项目，而不是只追逐概念热度。",
+            ),
+            (
+                "六、资本赋能路径建议",
+                "第一，建立政府引导基金与社会资本协同机制，重点支持低空基础设施、公共服务平台和关键技术企业。第二，围绕重点场景设置示范项目，通过小规模试点验证技术可行性、运营成本和商业回报。第三，引入融资租赁、保险和供应链金融，降低企业一次性设备采购压力。第四，推动龙头企业、地方平台和金融机构联合，形成研发、制造、运营、采购、保险和金融服务联动体系。第五，建立项目评价标准，把安全合规、场景稳定性、订单质量、现金流和可复制性作为资本投入的重要依据。",
+            ),
+            (
+                "七、结论",
+                "资本赋能低空经济的核心，不是用资金催熟概念，而是让资金与真实产业场景、基础设施建设、技术研发和运营服务形成长期协同。对于地方产业发展而言，应以可落地场景为牵引，以公共能力建设为基础，以产业链企业为主体，以金融工具组合为支撑，逐步推动低空经济从政策热点走向可持续产业。",
+            ),
+        ]
+
+    def extract_research_topic(self, user_task):
+        cleaned_topic = user_task
+        removable_words = [
+            "帮我",
+            "生成",
+            "写一份",
+            "做一份",
+            "关于",
+            "的word文档",
+            "的 Word 文档",
+            "Word文档",
+            "Word 文档",
+            "文档",
+        ]
+
+        for word in removable_words:
+            cleaned_topic = cleaned_topic.replace(word, "")
+
+        cleaned_topic = cleaned_topic.strip(" ：:，。")
+        return cleaned_topic or "专题研究报告"
+
+    def build_research_report_sections(self, user_task):
+        topic = self.extract_research_topic(user_task)
+        return [
+            (
+                "一、研究背景与意义",
+                f"{topic}关系到产业结构优化、资源配置效率和未来发展空间。开展相关研究，有助于系统梳理当前基础、发展环境、关键问题和推进路径，为后续决策、项目谋划和资源投入提供参考。",
+            ),
+            (
+                "二、核心概念与研究范围",
+                f"本报告围绕{topic}展开，重点关注政策环境、产业基础、市场需求、技术条件、资本支持、场景应用和风险约束等方面。研究范围既包括宏观发展趋势，也包括具体落地过程中需要关注的组织、资金、人才、技术和运营问题。",
+            ),
+            (
+                "三、发展现状",
+                f"从当前情况看，{topic}已经具备一定发展基础，相关主体开始从概念讨论转向项目实践。政策端持续释放支持信号，市场端对效率提升和新场景应用的需求增强，企业端也在探索产品、服务和运营模式。但总体来看，行业仍处在从试点探索向规模化发展的过渡阶段。",
+            ),
+            (
+                "四、主要问题",
+                f"{topic}在推进过程中仍面临几类问题：一是基础能力建设不均衡，部分环节仍依赖单点突破；二是商业模式尚不稳定，投入和收益之间存在时间差；三是专业人才、技术标准和协同机制仍需完善；四是风险识别、责任划分和持续运营能力有待增强。",
+            ),
+            (
+                "五、趋势判断",
+                f"未来，{topic}将从单一项目推进逐步转向系统化、平台化和场景化发展。具备真实需求、稳定现金流、明确政策支持和可复制模式的方向，将更容易获得资源倾斜。单纯依靠概念包装的发展方式难以持续，围绕真实问题形成解决方案将成为关键。",
+            ),
+            (
+                "六、对策建议",
+                f"第一，建立清晰的发展目标和阶段任务，避免盲目铺开。第二，围绕重点场景打造示范项目，通过小范围验证降低试错成本。第三，加强政策、资本、企业和应用场景之间的协同，形成长期投入机制。第四，建立风险评估和质量检查机制，确保项目可持续推进。第五，持续沉淀数据、案例和经验，为后续复制推广提供依据。",
+            ),
+            (
+                "七、结论",
+                f"总体来看，{topic}具有较强的研究价值和实践意义。后续推进应坚持问题导向和结果导向，把政策支持、市场需求、技术能力和资本投入结合起来，逐步形成可落地、可评估、可持续的发展路径。",
+            ),
         ]
 
     def write_docx(self, document_path, paragraphs):
