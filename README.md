@@ -466,3 +466,25 @@ python desktop_app.py
 ```bash
 python test_desktop_app.py
 ```
+
+## v0.11 Desktop Shortcut
+
+现在可以创建桌面图标。当前先创建 Windows 桌面快捷方式，后续再升级为带自定义 `.ico` 图标和安装包的版本。
+
+创建方式：
+
+```text
+双击 create_desktop_shortcut.bat
+```
+
+创建后，桌面会出现：
+
+```text
+Office-AI-OS
+```
+
+测试命令：
+
+```bash
+python test_desktop_shortcut.py
+```
