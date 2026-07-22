@@ -81,6 +81,6 @@ class IterationAgent:
             "1. 增强 File Improvement Agent 的改进版内容质量。\n"
             "2. 让 Learning Agent 自动更新 production_techniques.md。\n"
             "3. 继续减少 Agent 之间重复代码。\n"
-            "4. 再考虑 Doubao / Kimi 的真实接入。\n"
+            "4. 继续完善 Kimi、DeepSeek 和 OpenAI 的真实接入。\n"
             "5. 最后做桌面 App 外壳。\n"
         )

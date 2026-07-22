@@ -83,6 +83,23 @@ def test_model_router_falls_back_after_provider_failure():
     print("测试通过：Model Router 会在模型失败后自动降级到下一个可用模型")
 
 
+def test_model_router_can_route_to_kimi():
+    router = ModelRouter(use_real_models=True)
+    router.provider_clients["openai"] = UnavailableClient()
+    router.provider_clients["kimi"] = AvailableSuccessClient()
+    router.provider_clients["deepseek"] = UnavailableClient()
+
+    route_info = router.route("word")
+    if route_info["provider"] != "kimi":
+        raise AssertionError(f"OpenAI 不可用时没有路由到 Kimi：{route_info}")
+
+    generation = router.generate("word", "帮我写一份中文文档")
+    if generation["route"]["provider"] != "kimi":
+        raise AssertionError(f"生成时没有使用 Kimi：{generation}")
+
+    print("测试通过：Model Router 可以路由到 Kimi")
+
+
 def test_model_router_returns_local_after_all_real_providers_fail():
     router = ModelRouter(use_real_models=True)
     router.provider_clients["deepseek"] = AvailableFailingClient()
@@ -101,17 +118,18 @@ def test_model_router_returns_local_after_all_real_providers_fail():
 
 
 def main():
-    run_route_test("word", ["deepseek", "local"])
-    run_route_test("excel", ["deepseek", "local"])
-    run_route_test("ppt", ["deepseek", "local"])
-    run_route_test("research", ["deepseek", "local"])
-    run_route_test("browser", ["deepseek", "local"])
-    run_route_test("qa", ["deepseek", "local"])
-    run_route_test("learning", ["deepseek", "local"])
+    run_route_test("word", ["kimi", "deepseek", "local"])
+    run_route_test("excel", ["deepseek", "kimi", "local"])
+    run_route_test("ppt", ["kimi", "deepseek", "local"])
+    run_route_test("research", ["kimi", "deepseek", "local"])
+    run_route_test("browser", ["deepseek", "kimi", "local"])
+    run_route_test("qa", ["deepseek", "kimi", "local"])
+    run_route_test("learning", ["deepseek", "kimi", "local"])
     run_route_test("image", ["local"])
     test_mock_generation()
     test_deepseek_route_generation()
     test_model_router_falls_back_after_provider_failure()
+    test_model_router_can_route_to_kimi()
     test_model_router_returns_local_after_all_real_providers_fail()
 
 

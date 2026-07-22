@@ -56,7 +56,7 @@ class AIButlerAgent:
         if "文案" in user_task or "word" in user_task.lower() or "润色" in user_task:
             return "- Model Router 优先调用 OpenAI API / Kimi / DeepSeek 处理文案和长文档结构。"
 
-        return "- Model Router 按任务类型选择 OpenAI API、DeepSeek、Doubao、Kimi 或本地规则。"
+        return "- Model Router 按任务类型选择 OpenAI API、DeepSeek、Kimi 或本地规则。"
 
     def build_office_steps(self, user_task):
         steps = []

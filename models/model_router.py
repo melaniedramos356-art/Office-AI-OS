@@ -4,6 +4,7 @@ from agents.model_advice_utils import is_unusable_model_result
 from models.mock_model_client import MockModelClient
 from models.model_config import MODEL_CONFIG, PROVIDER_CONFIG
 from models.providers.deepseek_client import DeepSeekClient
+from models.providers.kimi_client import KimiClient
 from models.providers.openai_client import OpenAIClient
 from models.prompt_optimizer import PromptOptimizer
 
@@ -15,6 +16,7 @@ class ModelRouter:
         self.prompt_optimizer = prompt_optimizer or PromptOptimizer()
         self.provider_clients = {
             "deepseek": DeepSeekClient(),
+            "kimi": KimiClient(),
             "openai": OpenAIClient(),
             "local": self.model_client,
         }

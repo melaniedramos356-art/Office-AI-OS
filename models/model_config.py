@@ -9,7 +9,7 @@ MODEL_CONFIG = {
     },
     "ppt": {
         "model_role": "presentation_model",
-        "preferred_providers": ["openai", "kimi", "doubao", "deepseek"],
+        "preferred_providers": ["openai", "kimi", "deepseek"],
     },
     "research": {
         "model_role": "research_model",
@@ -25,11 +25,11 @@ MODEL_CONFIG = {
     },
     "learning": {
         "model_role": "learning_model",
-        "preferred_providers": ["deepseek", "kimi", "doubao"],
+        "preferred_providers": ["deepseek", "kimi"],
     },
     "image": {
         "model_role": "image_model",
-        "preferred_providers": ["doubao", "openai", "local"],
+        "preferred_providers": ["openai", "local"],
     },
 }
 
@@ -42,15 +42,12 @@ PROVIDER_CONFIG = {
         "base_url": "https://api.deepseek.com/chat/completions",
         "model": "deepseek-v4-flash",
     },
-    "doubao": {
-        "display_name": "豆包 Doubao",
-        "api_key_env": "DOUBAO_API_KEY",
-        "status": "reserved",
-    },
     "kimi": {
         "display_name": "Kimi",
         "api_key_env": "KIMI_API_KEY",
-        "status": "reserved",
+        "status": "available",
+        "base_url": "https://api.moonshot.cn/v1/chat/completions",
+        "model": "kimi-k2.6",
     },
     "openai": {
         "display_name": "OpenAI API",

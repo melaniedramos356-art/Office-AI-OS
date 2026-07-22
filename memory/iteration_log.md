@@ -34,5 +34,5 @@
 1. 增强 File Improvement Agent 的改进版内容质量。
 2. 让 Learning Agent 自动更新 production_techniques.md。
 3. 继续减少 Agent 之间重复代码。
-4. 再考虑 Doubao / Kimi 的真实接入。
+4. 继续完善 Kimi、DeepSeek 和 OpenAI 的真实接入。
 5. 最后做桌面 App 外壳。
