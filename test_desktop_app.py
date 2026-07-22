@@ -1,4 +1,4 @@
-from desktop_app import build_desktop_command, command_needs_file, load_panel_data
+from desktop_app import build_desktop_command, command_needs_file, extract_first_output_path, load_panel_data
 
 
 def test_load_panel_data():
@@ -36,9 +36,24 @@ def test_build_desktop_command():
     print("测试通过：桌面 App 可以拼接执行命令")
 
 
+def test_extract_first_output_path():
+    task_result = "Word Agent 已生成文档。\n文件位置：outputs\\word_documents\\demo.docx\n\nQA Agent 检查通过"
+    output_path = extract_first_output_path(task_result)
+
+    if output_path != "outputs\\word_documents\\demo.docx":
+        raise AssertionError(f"桌面 App 没有正确识别生成文件路径：{output_path}")
+
+    empty_path = extract_first_output_path("没有文件路径")
+    if empty_path:
+        raise AssertionError(f"没有文件路径时不应该返回路径：{empty_path}")
+
+    print("测试通过：桌面 App 可以识别生成文件路径")
+
+
 def main():
     test_load_panel_data()
     test_build_desktop_command()
+    test_extract_first_output_path()
 
 
 if __name__ == "__main__":

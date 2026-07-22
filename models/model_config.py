@@ -1,7 +1,7 @@
 MODEL_CONFIG = {
     "word": {
         "model_role": "writing_model",
-        "preferred_providers": ["kimi", "deepseek", "openai"],
+        "preferred_providers": ["openai", "kimi", "deepseek"],
     },
     "excel": {
         "model_role": "data_model",
@@ -9,7 +9,7 @@ MODEL_CONFIG = {
     },
     "ppt": {
         "model_role": "presentation_model",
-        "preferred_providers": ["kimi", "doubao", "openai"],
+        "preferred_providers": ["openai", "kimi", "doubao", "deepseek"],
     },
     "research": {
         "model_role": "research_model",
@@ -53,7 +53,7 @@ PROVIDER_CONFIG = {
         "status": "reserved",
     },
     "openai": {
-        "display_name": "OpenAI",
+        "display_name": "OpenAI API",
         "api_key_env": "OPENAI_API_KEY",
         "status": "reserved",
     },

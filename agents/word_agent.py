@@ -3,10 +3,14 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.ai_output_utils import extract_json_data, has_forbidden_output_text, is_usable_model_generation
+from models.model_router import ModelRouter
+
 
 class WordAgent:
-    def __init__(self, output_folder="outputs/word_documents"):
+    def __init__(self, output_folder="outputs/word_documents", model_router=None):
         self.output_folder = Path(output_folder)
+        self.model_router = model_router or ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -42,6 +46,10 @@ class WordAgent:
     def build_document_paragraphs(self, user_task):
         document_type = self.detect_document_type(user_task)
         sections = self.build_sections(document_type, user_task)
+        ai_document = self.build_ai_document(user_task, document_type, sections)
+
+        if ai_document:
+            return ai_document
 
         paragraphs = [("title", self.build_document_title(user_task, document_type))]
 
@@ -55,6 +63,57 @@ class WordAgent:
             paragraphs.append(("text", content))
 
         return paragraphs
+
+    def build_ai_document(self, user_task, document_type, base_sections):
+        title = self.build_document_title(user_task, document_type)
+        section_titles = [section_title for section_title, _ in base_sections]
+        prompt = (
+            f"需求：{user_task}\n"
+            f"类型：{document_type}\n"
+            f"标题：{title}\n"
+            f"章节：{section_titles}\n"
+            "返回JSON：{\"title\":\"\",\"summary\":\"\",\"sections\":[{\"title\":\"\",\"content\":\"\"}]}\n"
+            "要求：章节标题必须完全按给定章节顺序；正文是可直接放进Word的成品内容；不要提示词、搜索词、占位、示例、草稿；每节120到260字。"
+        )
+        generation = self.model_router.generate("word", prompt)
+        if not is_usable_model_generation(generation):
+            return []
+
+        data = extract_json_data(generation.get("result", ""))
+        if not isinstance(data, dict) or has_forbidden_output_text(data):
+            return []
+
+        ai_title = data.get("title", title)
+        summary = data.get("summary", "")
+        sections = data.get("sections", [])
+        if not self.is_valid_ai_sections(sections, section_titles):
+            return []
+
+        paragraphs = [("title", ai_title if isinstance(ai_title, str) and ai_title.strip() else title)]
+        if isinstance(summary, str) and summary.strip():
+            paragraphs.append(("heading", "文档摘要"))
+            paragraphs.append(("text", summary.strip()))
+
+        for section in sections:
+            paragraphs.append(("heading", section["title"].strip()))
+            paragraphs.append(("text", section["content"].strip()))
+
+        return paragraphs
+
+    def is_valid_ai_sections(self, sections, section_titles):
+        if not isinstance(sections, list) or len(sections) != len(section_titles):
+            return False
+
+        for index, section in enumerate(sections):
+            if not isinstance(section, dict):
+                return False
+            if section.get("title") != section_titles[index]:
+                return False
+            content = section.get("content", "")
+            if not isinstance(content, str) or len(content.strip()) < 20:
+                return False
+
+        return True
 
     def build_document_title(self, user_task, document_type):
         if document_type == "大学生暑假安全教育班会文案":

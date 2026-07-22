@@ -1,4 +1,8 @@
+import os
+
 from coordinator import ChiefCoordinator
+
+os.environ["OFFICE_AI_USE_REAL_MODEL"] = "0"
 
 
 def run_test(task_text, expected_agent_name):

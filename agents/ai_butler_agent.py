@@ -34,7 +34,7 @@ class AIButlerAgent:
 
     def detect_entry_mode(self, user_task):
         if "chatgpt" in user_task.lower() or "codex" in user_task.lower() or "管家" in user_task:
-            return "优先使用 ChatGPT / Codex 管家做需求理解和任务拆解。"
+            return "优先使用 ChatGPT App / Codex 管家做需求理解、任务拆解和模型分配。"
 
         return "没有 ChatGPT 管家时，使用 Office-AI-OS 本地核心直接执行。"
 
@@ -60,7 +60,7 @@ class AIButlerAgent:
 
     def build_model_steps(self, user_task):
         steps = [
-            "- Model Router 负责选择模型，不让某一个 Agent 直接绑定固定模型。",
+            "- ChatGPT App / Codex 负责总指挥；Model Router 负责在本地程序里选择可用模型。",
         ]
 
         if "图片" in user_task or "视觉" in user_task or "版面" in user_task:
@@ -73,7 +73,7 @@ class AIButlerAgent:
             steps.append("- 文案润色、语言丰富和长文档结构优先交给 Kimi / OpenAI。")
 
         if len(steps) == 1:
-            steps.append("- 默认先用本地知识库兜底，再按任务类型选择 DeepSeek、Doubao、Kimi 或 OpenAI。")
+            steps.append("- 默认先用本地知识库兜底，再按任务类型选择 OpenAI API、DeepSeek、Doubao、Kimi 或本地规则。")
 
         return steps
 

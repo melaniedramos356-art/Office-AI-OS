@@ -3,10 +3,14 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.ai_output_utils import extract_json_data, has_forbidden_output_text, is_usable_model_generation
+from models.model_router import ModelRouter
+
 
 class ExcelAgent:
-    def __init__(self, output_folder="outputs/excel_files"):
+    def __init__(self, output_folder="outputs/excel_files", model_router=None):
         self.output_folder = Path(output_folder)
+        self.model_router = model_router or ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -42,6 +46,9 @@ class ExcelAgent:
     def build_rows(self, user_task):
         table_type = self.detect_table_type(user_task)
         table_topic = self.extract_table_topic(user_task)
+        ai_rows = self.build_ai_rows(user_task, table_type, table_topic)
+        if ai_rows:
+            return self.add_support_rows(ai_rows)
 
         if table_type == "数据统计表":
             rows = [
@@ -90,6 +97,63 @@ class ExcelAgent:
             ["3", "结果交付", "负责人C", "未开始", "完成后统一归档"],
         ]
         return self.add_support_rows(rows)
+
+    def build_ai_rows(self, user_task, table_type, table_topic):
+        headers = self.build_headers(table_type)
+        prompt = (
+            f"需求：{user_task}\n"
+            f"表格类型：{table_type}\n"
+            f"表格主题：{table_topic}\n"
+            f"表头：{headers}\n"
+            "返回JSON：{\"rows\":[[\"字段1\",\"字段2\"],[\"数据1\",\"数据2\"]]}\n"
+            "要求：第一行必须是表格类型，第二行必须是表格主题，第三行空数组，第四行必须是给定表头；后面生成3到6行可直接查看的业务数据；不要提示词、搜索词、占位、示例、草稿、待采集、按实际、需补充。"
+        )
+        generation = self.model_router.generate("excel", prompt)
+        if not is_usable_model_generation(generation):
+            return []
+
+        data = extract_json_data(generation.get("result", ""))
+        if not isinstance(data, dict) or has_forbidden_output_text(data):
+            return []
+
+        rows = data.get("rows", [])
+        if not self.is_valid_ai_rows(rows, table_type, table_topic, headers):
+            return []
+
+        return rows
+
+    def build_headers(self, table_type):
+        if table_type == "数据统计表":
+            return ["项目", "数值", "备注"]
+        if table_type == "客户信息表":
+            return ["客户名称", "联系人", "电话", "跟进状态", "备注"]
+        if table_type == "销售报表":
+            return ["日期", "产品", "销售额", "成本", "利润", "备注"]
+        return ["序号", "事项", "负责人", "状态", "备注"]
+
+    def is_valid_ai_rows(self, rows, table_type, table_topic, headers):
+        if not isinstance(rows, list) or len(rows) < 5:
+            return False
+
+        if rows[0] != ["表格类型", table_type]:
+            return False
+
+        if rows[1] != ["表格主题", table_topic]:
+            return False
+
+        if rows[2] != []:
+            return False
+
+        if rows[3] != headers:
+            return False
+
+        for row in rows[4:]:
+            if not isinstance(row, list) or len(row) != len(headers):
+                return False
+            if any(not str(value).strip() for value in row[: min(3, len(row))]):
+                return False
+
+        return True
 
     def add_support_rows(self, rows):
         table_type = self.extract_table_type(rows)

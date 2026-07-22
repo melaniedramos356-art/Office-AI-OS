@@ -1,8 +1,11 @@
+import os
 from pathlib import Path
 from zipfile import ZipFile
 
 from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
+
+os.environ["OFFICE_AI_USE_REAL_MODEL"] = "0"
 
 
 def main():

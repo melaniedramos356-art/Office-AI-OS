@@ -3,10 +3,14 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.ai_output_utils import extract_json_data, has_forbidden_output_text, is_usable_model_generation
+from models.model_router import ModelRouter
+
 
 class PPTAgent:
-    def __init__(self, output_folder="outputs/ppt_files"):
+    def __init__(self, output_folder="outputs/ppt_files", model_router=None):
         self.output_folder = Path(output_folder)
+        self.model_router = model_router or ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -43,6 +47,11 @@ class PPTAgent:
         presentation_type = self.detect_presentation_type(user_task)
         topic = self.extract_clean_topic(user_task)
         slides = self.build_slides(presentation_type)
+        ai_slides = self.build_ai_slides(user_task, presentation_type, topic, slides)
+
+        if ai_slides:
+            return ai_slides
+
         agenda_slide = self.build_agenda_slide(slides)
 
         slide_data = [
@@ -52,6 +61,57 @@ class PPTAgent:
             }
         ] + [agenda_slide] + slides
         return slide_data
+
+    def build_ai_slides(self, user_task, presentation_type, topic, base_slides):
+        slide_titles = [slide["title"] for slide in base_slides]
+        prompt = (
+            f"需求：{user_task}\n"
+            f"PPT类型：{presentation_type}\n"
+            f"主题：{topic}\n"
+            f"页面标题：{slide_titles}\n"
+            "返回JSON数组：[{\"title\":\"\",\"bullets\":[\"\",\"\",\"\"]}]\n"
+            "要求：必须包含封面、目录和给定页面标题；每页2到3条要点；内容可直接放进PPT；不要提示词、搜索词、占位、示例、草稿。"
+        )
+        generation = self.model_router.generate("ppt", prompt)
+        if not is_usable_model_generation(generation):
+            return []
+
+        data = extract_json_data(generation.get("result", ""))
+        if not isinstance(data, list) or has_forbidden_output_text(data):
+            return []
+
+        return self.normalize_ai_slides(data, slide_titles)
+
+    def normalize_ai_slides(self, slides, required_titles):
+        normalized_slides = []
+        seen_titles = []
+        for slide in slides:
+            if not isinstance(slide, dict):
+                return []
+
+            title = slide.get("title", "")
+            bullets = slide.get("bullets", [])
+            if not isinstance(title, str) or not title.strip():
+                return []
+            if not isinstance(bullets, list) or not bullets:
+                return []
+
+            cleaned_bullets = []
+            for bullet in bullets[:3]:
+                if isinstance(bullet, str) and bullet.strip():
+                    cleaned_bullets.append(bullet.strip())
+
+            if not cleaned_bullets:
+                return []
+
+            seen_titles.append(title.strip())
+            normalized_slides.append({"title": title.strip(), "bullets": cleaned_bullets})
+
+        for required_title in required_titles:
+            if required_title not in seen_titles:
+                return []
+
+        return normalized_slides
 
     def build_agenda_slide(self, slides):
         agenda_items = []
