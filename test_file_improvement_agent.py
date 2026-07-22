@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from agents.file_improvement_agent import FileImprovementAgent
+from agents.qa_agent import QAAgent
 from agents.word_agent import WordAgent
 from coordinator import ChiefCoordinator
 
@@ -28,6 +31,31 @@ def test_file_improvement_agent_builds_advice():
     print("测试通过：File Improvement Agent 可以生成文件改进建议")
 
 
+def test_file_improvement_agent_creates_word_file():
+    word_agent = WordAgent(output_folder="outputs/test_file_improvement")
+    word_result = word_agent.handle("帮我写一份需要生成改进版的 Word 文档")
+    original_document_path = extract_file_path(word_result)
+
+    improvement_agent = FileImprovementAgent()
+    result = improvement_agent.handle(f"请生成改进版 {original_document_path}")
+
+    if "File Improvement Agent 已生成 Word 改进版文件" not in result:
+        raise AssertionError(f"File Improvement Agent 没有生成 Word 改进版：{result}")
+
+    improved_document_path = extract_file_path(result)
+    if improved_document_path == original_document_path:
+        raise AssertionError("改进版文件不应该覆盖原文件。")
+
+    qa_agent = QAAgent()
+    improved_content = qa_agent.read_file_content(Path(improved_document_path))
+    required_texts = ["Word 改进版文档", "结构优化建议", "文案润色方向", "版面设计方向", "图片素材建议"]
+    for text in required_texts:
+        if text not in improved_content:
+            raise AssertionError(f"Word 改进版缺少内容：{text}")
+
+    print("测试通过：File Improvement Agent 可以生成 Word 改进版文件")
+
+
 def test_coordinator_routes_file_improvement_task():
     word_agent = WordAgent(output_folder="outputs/test_file_improvement")
     word_result = word_agent.handle("帮我写一份用于协调器优化的 Word 文档")
@@ -54,6 +82,7 @@ def extract_file_path(task_result):
 
 def main():
     test_file_improvement_agent_builds_advice()
+    test_file_improvement_agent_creates_word_file()
     test_coordinator_routes_file_improvement_task()
 
 

@@ -3,6 +3,7 @@ from agents.file_reader_agent import FileReaderAgent
 from agents.inspiration_library import InspirationLibrary
 from agents.production_technique_library import ProductionTechniqueLibrary
 from agents.qa_agent import QAAgent
+from agents.word_agent import WordAgent
 
 
 class FileImprovementAgent:
@@ -12,10 +13,14 @@ class FileImprovementAgent:
         self.data_analysis_inspiration_library = DataAnalysisInspirationLibrary()
         self.production_technique_library = ProductionTechniqueLibrary()
         self.qa_agent = QAAgent()
+        self.word_agent = WordAgent(output_folder="outputs/improved_word_documents")
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
             return "File Improvement Agent 没有收到有效任务。"
+
+        if self.should_create_improved_file(user_task):
+            return self.create_improved_word_document(user_task)
 
         file_path = self.file_reader_agent.extract_file_path(user_task)
         if not file_path:
@@ -128,3 +133,87 @@ class FileImprovementAgent:
             "excel": "- 下一步可以交给 Excel Agent 生成一个带填写规则、图表建议和质量清单的改进版表格。",
         }
         return next_step_map.get(section_name, "- 下一步交给 AI Butler Agent 继续拆解任务。")
+
+    def should_create_improved_file(self, user_task):
+        create_keywords = ["生成改进版", "生成修改版", "输出改进版", "制作改进版"]
+        for keyword in create_keywords:
+            if keyword in user_task:
+                return True
+        return False
+
+    def create_improved_word_document(self, user_task):
+        if not isinstance(user_task, str) or not user_task.strip():
+            return "File Improvement Agent 没有收到有效任务。"
+
+        file_path = self.file_reader_agent.extract_file_path(user_task)
+        if not file_path:
+            return "File Improvement Agent 没有找到 Word 文件路径。"
+
+        if file_path.suffix.lower() != ".docx":
+            return "File Improvement Agent 当前只支持生成 Word 改进版文件。"
+
+        if not file_path.exists():
+            return f"File Improvement Agent 没有找到文件：{file_path}"
+
+        try:
+            file_content = self.qa_agent.read_file_content(file_path)
+        except OSError as error:
+            return f"File Improvement Agent 读取文件失败：{error}"
+
+        paragraphs = self.build_improved_word_paragraphs(file_path, file_content)
+        output_path = self.word_agent.output_folder / self.word_agent.build_file_name()
+        self.word_agent.output_folder.mkdir(parents=True, exist_ok=True)
+        self.word_agent.write_docx(output_path, paragraphs)
+
+        return (
+            "File Improvement Agent 已生成 Word 改进版文件。\n"
+            f"任务内容：{user_task.strip()}\n"
+            f"原文件位置：{file_path}\n"
+            f"文件位置：{output_path}"
+        )
+
+    def build_improved_word_paragraphs(self, file_path, file_content):
+        original_lines = [line.strip() for line in file_content.splitlines() if line.strip()]
+        preview_lines = original_lines[:8]
+
+        paragraphs = [
+            ("title", "Word 改进版文档"),
+            ("heading", "原文件位置"),
+            ("text", str(file_path)),
+            ("heading", "改进摘要"),
+            ("text", "本文件基于原 Word 内容生成，重点增强结构、文案表达、版面层级和图片素材建议。"),
+            ("heading", "原文内容摘录"),
+        ]
+
+        for line in preview_lines:
+            paragraphs.append(("bullet", line[:160]))
+
+        paragraphs.extend(
+            [
+                ("heading", "结构优化建议"),
+                ("bullet", "先补充核心结论，再展开背景、依据和下一步动作。"),
+                ("bullet", "把长段落拆成短段落或项目符号，提升可读性。"),
+                ("bullet", "统一标题层级，避免同一级标题表达不同信息层次。"),
+                ("heading", "文案润色方向"),
+                ("bullet", "把空泛描述改成具体对象、时间、数据和结果。"),
+                ("bullet", "减少重复表达，保留最能支撑结论的信息。"),
+                ("bullet", "重要结论前置，说明和补充内容后置。"),
+                ("heading", "版面设计方向"),
+                ("bullet", "标题、正文、备注使用不同层级，保持留白和对齐。"),
+                ("bullet", "关键结论后预留截图、流程图或案例图片位置。"),
+                ("heading", "图片素材建议"),
+            ]
+        )
+
+        for source_line in self.inspiration_library.build_source_lines(str(file_path), limit=4):
+            paragraphs.append(("bullet", source_line.replace("- ", "", 1)))
+
+        paragraphs.extend(
+            [
+                ("heading", "待人工确认"),
+                ("bullet", "请确认原文中的真实数据、人员、时间和业务背景是否完整。"),
+                ("bullet", "请确认是否需要继续生成正式可交付版本。"),
+            ]
+        )
+
+        return paragraphs
