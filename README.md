@@ -198,6 +198,8 @@ DEEPSEEK_API_KEY
 
 Excel Agent 已接入 Model Router。当前会优先使用 DeepSeek 生成字段建议，并写入 `.xlsx` 文件。
 
+Excel Agent 已增加数据分析网站灵感库。生成 `.xlsx` 时会写入 Tableau Public、Power BI Data Stories、Looker Studio Gallery、Flourish Examples 等数据分析参考来源。
+
 PPT Agent 已增加目录页和 AI 结构建议页。当前在 Kimi / Doubao 未接入前，会先写入本地兜底结构建议。
 
 Word Agent 已增加文档摘要、AI 结构建议和灵感素材查找建议。当前在 Kimi 未接入前，会先写入本地兜底结构建议。

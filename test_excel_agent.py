@@ -44,6 +44,15 @@ def main():
     if "DeepSeek 字段建议" not in table_content:
         raise AssertionError("Excel 表格没有写入 DeepSeek 字段建议。")
 
+    if "数据分析网站灵感库" not in table_content:
+        raise AssertionError("Excel 表格没有写入数据分析网站灵感库。")
+
+    if "Tableau Public" not in table_content or "Power BI Data Stories Gallery" not in table_content:
+        raise AssertionError("Excel 表格没有写入核心数据分析灵感网站。")
+
+    if "Flourish Examples" not in table_content:
+        raise AssertionError("Excel 表格没有写入图表灵感网站。")
+
     print(f"测试通过：Excel Agent 已生成文件 {table_path}")
 
 

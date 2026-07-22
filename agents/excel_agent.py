@@ -3,6 +3,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.data_analysis_inspiration_library import DataAnalysisInspirationLibrary
 from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
 
@@ -10,6 +11,7 @@ from models.model_router import ModelRouter
 class ExcelAgent:
     def __init__(self, output_folder="outputs/excel_files"):
         self.output_folder = Path(output_folder)
+        self.data_analysis_inspiration_library = DataAnalysisInspirationLibrary()
         self.technique_library = TechniqueLibrary()
         self.model_router = ModelRouter()
 
@@ -98,6 +100,13 @@ class ExcelAgent:
         rows.extend([[], ["DeepSeek 字段建议", "说明"]])
         for advice in model_advice:
             rows.append(["模型建议", advice])
+
+        user_task = self.extract_original_task(rows)
+        rows.extend([[], ["数据分析网站灵感库", "类型", "用途", "链接"]])
+        rows.extend(self.data_analysis_inspiration_library.build_source_rows(user_task))
+
+        rows.extend([[], ["数据分析搜索词", "关键词"]])
+        rows.extend(self.data_analysis_inspiration_library.build_keyword_rows(user_task))
         return rows
 
     def build_model_advice(self, rows):
