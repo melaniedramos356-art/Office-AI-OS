@@ -80,3 +80,27 @@ QA Agent 现在可以在生成文件后自动做基础质量检查。
 ```bash
 python test_qa_agent.py
 ```
+
+## v0.4 Research Agent
+
+Research Agent 现在可以生成资料搜索计划，暂时不联网搜索。
+
+适合输入：
+
+```text
+帮我调研 AI 办公工具
+帮我搜索某个行业的资料
+帮我做竞品研究
+```
+
+测试命令：
+
+```bash
+python test_research_agent.py
+```
+
+生成文件位置：
+
+```text
+outputs/research_plans/
+```

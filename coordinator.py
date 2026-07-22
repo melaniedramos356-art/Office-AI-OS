@@ -1,6 +1,7 @@
 from agents.excel_agent import ExcelAgent
 from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
+from agents.research_agent import ResearchAgent
 from agents.word_agent import WordAgent
 
 
@@ -9,6 +10,7 @@ class ChiefCoordinator:
         self.word_agent = WordAgent()
         self.excel_agent = ExcelAgent()
         self.ppt_agent = PPTAgent()
+        self.research_agent = ResearchAgent()
         self.qa_agent = QAAgent()
 
     def handle_task(self, user_task):
@@ -31,6 +33,10 @@ class ChiefCoordinator:
         ppt_keywords = ["ppt", "演示", "幻灯片", "汇报", "presentation"]
         excel_keywords = ["excel", "表格", "数据", "统计", "计算", "报表", "spreadsheet"]
         word_keywords = ["word", "文档", "文章", "报告", "合同", "通知", "document"]
+        research_keywords = ["调研", "搜索", "资料", "查找", "研究", "竞品", "research"]
+
+        if self.has_keyword(task_text, research_keywords):
+            return self.research_agent
 
         if self.has_keyword(task_text, ppt_keywords):
             return self.ppt_agent
