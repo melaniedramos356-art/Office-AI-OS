@@ -35,7 +35,7 @@ def extract_first_output_path(task_result):
     if not isinstance(task_result, str) or not task_result.strip():
         return ""
 
-    path_prefixes = ["文件位置：", "数据位置："]
+    path_prefixes = ["任务单位置：", "文件位置：", "数据位置："]
     for line in task_result.splitlines():
         cleaned_line = line.strip()
         for prefix in path_prefixes:
@@ -128,7 +128,7 @@ def run_desktop_app():
     result_text = ScrolledText(right_frame, wrap="word", height=24)
     result_text.pack(fill="both", expand=True, pady=(8, 0))
 
-    output_text = tk.StringVar(value="生成结果会显示在这里")
+    output_text = tk.StringVar(value="创作任务单会显示在这里")
     output_label = tk.Label(right_frame, textvariable=output_text, anchor="w")
     output_label.pack(fill="x", pady=(8, 0))
 
@@ -177,7 +177,7 @@ def run_desktop_app():
         result_text.insert(tk.END, result)
         output_path = extract_first_output_path(result)
         last_output_path["path"] = output_path
-        output_text.set(f"生成文件：{output_path}" if output_path else "本次没有识别到生成文件路径")
+        output_text.set(f"创作任务单：{output_path}" if output_path else "本次没有识别到创作任务单路径")
 
     def open_output_file():
         output_path = last_output_path.get("path", "")
@@ -212,10 +212,10 @@ def run_desktop_app():
     output_button_frame = tk.Frame(right_frame)
     output_button_frame.pack(fill="x", pady=(8, 0))
 
-    open_file_button = tk.Button(output_button_frame, text="打开文件", command=open_output_file)
+    open_file_button = tk.Button(output_button_frame, text="打开任务单", command=open_output_file)
     open_file_button.pack(side="left", fill="x", expand=True)
 
-    open_folder_button = tk.Button(output_button_frame, text="打开文件夹", command=open_output_folder)
+    open_folder_button = tk.Button(output_button_frame, text="打开任务单文件夹", command=open_output_folder)
     open_folder_button.pack(side="right", fill="x", expand=True, padx=(8, 0))
 
     if buttons:

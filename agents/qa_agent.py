@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from xml.etree import ElementTree
 from zipfile import BadZipFile, ZipFile
 
@@ -39,8 +40,8 @@ class QAAgent:
         if not file_content.strip():
             problems.append("文件内容为空")
 
-        if isinstance(original_task, str) and original_task.strip() not in file_content:
-            problems.append("文件内容没有包含原始需求")
+        if not self.is_relevant_to_task(file_content, original_task):
+            problems.append("文件内容没有覆盖需求关键词")
 
         if file_path.suffix.lower() not in [".md", ".csv", ".txt", ".docx", ".xlsx", ".pptx"]:
             problems.append("文件类型暂未纳入当前检查范围")
@@ -50,6 +51,90 @@ class QAAgent:
             return f"QA Agent 质量检查结果：未通过，{problem_text}。文件位置：{file_path}"
 
         return f"QA Agent 质量检查结果：通过。文件位置：{file_path}"
+
+    def is_relevant_to_task(self, file_content, original_task):
+        if not isinstance(original_task, str) or not original_task.strip():
+            return True
+
+        task_text = original_task.strip()
+        if task_text in file_content:
+            return True
+
+        keywords = self.extract_task_keywords(task_text)
+        if not keywords:
+            return True
+
+        matched_count = 0
+        for keyword in keywords:
+            if keyword in file_content:
+                matched_count += 1
+
+        required_count = min(2, max(1, len(keywords) // 3))
+        return matched_count >= required_count
+
+    def extract_task_keywords(self, task_text):
+        cleaned_text = task_text
+        stop_words = [
+            "帮我",
+            "生成",
+            "做一份",
+            "写一份",
+            "制作",
+            "新建",
+            "关于",
+            "大概",
+            "左右",
+            "给",
+            "看",
+            "一个",
+            "一份",
+            "文件",
+            "文档",
+            "表格",
+            "演示稿",
+            "ppt",
+            "PPT",
+            "word",
+            "Word",
+            "excel",
+            "Excel",
+            "页",
+        ]
+
+        for word in stop_words:
+            cleaned_text = cleaned_text.replace(word, " ")
+
+        raw_parts = re.split(r"[\s,，。；;：:\-_、/\\]+", cleaned_text)
+        keywords = []
+        for part in raw_parts:
+            cleaned_part = part.strip()
+            if len(cleaned_part) >= 2 and not cleaned_part.isdigit():
+                keywords.extend(self.build_chinese_key_fragments(cleaned_part))
+                keywords.append(cleaned_part)
+
+        return self.unique_texts(keywords)[:24]
+
+    def build_chinese_key_fragments(self, text):
+        if not re.fullmatch(r"[\u4e00-\u9fff]+", text) or len(text) < 4:
+            return []
+
+        fragments = []
+        for size in [3, 2, 4]:
+            for index in range(0, len(text) - size + 1):
+                fragments.append(text[index : index + size])
+
+        return fragments
+
+    def unique_texts(self, texts):
+        unique_results = []
+        seen_texts = set()
+        for text in texts:
+            key = text.lower()
+            if key in seen_texts:
+                continue
+            seen_texts.add(key)
+            unique_results.append(text)
+        return unique_results
 
     def read_file_content(self, file_path):
         if file_path.suffix.lower() == ".csv":

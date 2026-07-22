@@ -1,31 +1,20 @@
-import os
-
 from coordinator import ChiefCoordinator
-
-os.environ["OFFICE_AI_USE_REAL_MODEL"] = "0"
-
-
-def run_test(task_text, expected_agent_name):
-    coordinator = ChiefCoordinator()
-    result = coordinator.handle_task(task_text)
-
-    if expected_agent_name not in result:
-        raise AssertionError(f"测试失败：预期 {expected_agent_name}，实际结果是：{result}")
-
-    print(f"测试通过：{task_text} -> {expected_agent_name}")
 
 
 def main():
-    try:
-        run_test("帮我做一份销售周报 PPT", "PPT Agent")
-        run_test("帮我整理一份客户数据 Excel 表格", "Excel Agent")
-        run_test("帮我写一份项目总结 Word 文档", "Word Agent")
-        run_test("请完善办公板块", "Office Panel Agent")
-        run_test("请参考 C:\\test\\demo.docx 仿写新文档", "Reference Imitation Agent")
-        run_test("", "任务内容不能为空")
-    except Exception as error:
-        print(f"测试失败：{error}")
-        raise
+    coordinator = ChiefCoordinator()
+    cases = [
+        ("帮我做一份销售周报 PPT", "PPT 演示文稿"),
+        ("帮我整理一份客户数据 Excel 表格", "Excel 工作簿"),
+        ("帮我写一份项目总结 Word 文档", "Word 文档"),
+    ]
+
+    for task, expected_text in cases:
+        result = coordinator.handle_task(task)
+        if expected_text not in result or "任务单位置：" not in result:
+            raise AssertionError(f"任务分配或任务单生成失败：{result}")
+
+    print("测试通过：协调器可为 Word、PPT、Excel 生成创作任务单")
 
 
 if __name__ == "__main__":

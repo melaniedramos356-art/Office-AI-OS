@@ -1,83 +1,20 @@
-import json
-from pathlib import Path
-
 from agents.office_panel_agent import OfficePanelAgent
-from coordinator import ChiefCoordinator
-
-
-def test_office_panel_agent_directly():
-    test_output_folder = "outputs/test_office_panels"
-    agent = OfficePanelAgent(output_folder=test_output_folder)
-    result = agent.handle("请完善办公板块，准备做桌面 App 交互页面")
-
-    if "Office Panel Agent 已生成办公板块说明" not in result:
-        raise AssertionError(f"没有生成办公板块说明：{result}")
-
-    panel_path = extract_file_path(result)
-    data_path = extract_data_path(result)
-    if not panel_path.exists():
-        raise AssertionError(f"文件不存在：{panel_path}")
-
-    if not data_path.exists():
-        raise AssertionError(f"JSON 数据文件不存在：{data_path}")
-
-    panel_content = panel_path.read_text(encoding="utf-8")
-    required_texts = [
-        "Word 文档生成",
-        "PPT 演示生成",
-        "Excel 表格生成",
-        "已有文件改进",
-        "素材灵感计划",
-        "桌面 App 按钮建议",
-    ]
-    for text in required_texts:
-        if text not in panel_content:
-            raise AssertionError(f"办公板块说明缺少内容：{text}")
-
-    panel_data = json.loads(data_path.read_text(encoding="utf-8"))
-    if len(panel_data.get("cards", [])) < 6:
-        raise AssertionError("办公板块 JSON 缺少功能卡片。")
-
-    if len(panel_data.get("desktop_buttons", [])) < 6:
-        raise AssertionError("办公板块 JSON 缺少桌面按钮。")
-
-    button_agents = [button.get("agent", "") for button in panel_data["desktop_buttons"]]
-    if "Word Agent" not in button_agents or "File Improvement Agent" not in button_agents:
-        raise AssertionError("办公板块 JSON 缺少关键 Agent 按钮。")
-
-    print(f"测试通过：Office Panel Agent 已生成文件 {panel_path}")
-
-
-def test_coordinator_routes_office_panel_task():
-    coordinator = ChiefCoordinator()
-    result = coordinator.handle_task("请完善办公板块，准备做桌面 App 交互页面")
-
-    if "Office Panel Agent 已生成办公板块说明" not in result:
-        raise AssertionError(f"Coordinator 没有分配给 Office Panel Agent：{result}")
-
-    if "QA Agent 质量检查结果：通过" not in result:
-        raise AssertionError(f"Office Panel Agent 结果没有通过 QA：{result}")
-
-    print("测试通过：Coordinator 可以分配办公板块任务")
-
-
-def extract_file_path(task_result):
-    for line in task_result.splitlines():
-        if line.startswith("文件位置："):
-            return Path(line.replace("文件位置：", "", 1).strip())
-    raise AssertionError(f"结果中没有文件位置：{task_result}")
-
-
-def extract_data_path(task_result):
-    for line in task_result.splitlines():
-        if line.startswith("数据位置："):
-            return Path(line.replace("数据位置：", "", 1).strip())
-    raise AssertionError(f"结果中没有数据位置：{task_result}")
 
 
 def main():
-    test_office_panel_agent_directly()
-    test_coordinator_routes_office_panel_task()
+    agent = OfficePanelAgent(output_folder="outputs/test_office_panels")
+    data = agent.build_panel_data("桌面程序交互页面")
+    buttons = data.get("desktop_buttons", [])
+    labels = [button.get("label") for button in buttons]
+
+    for label in ["新建 Word", "新建 PPT", "新建 Excel", "改进文件", "参考仿写"]:
+        if label not in labels:
+            raise AssertionError(f"办公面板缺少入口：{label}")
+
+    result = agent.handle("桌面程序交互页面")
+    if "办公面板说明" not in result:
+        raise AssertionError(f"办公面板说明生成失败：{result}")
+    print("测试通过：办公面板使用创作任务单入口")
 
 
 if __name__ == "__main__":

@@ -44,8 +44,18 @@ class ChiefCoordinator:
         agent = self.choose_agent(cleaned_task)
         task_result = agent.handle(cleaned_task)
 
-        if agent in [self.file_reader_agent, self.file_improvement_agent]:
-            return f"{task_result}\n\nQA Agent 质量检查结果：跳过，文件分析类任务不检查原文件是否包含任务指令。"
+        task_brief_agents = [
+            self.word_agent,
+            self.ppt_agent,
+            self.excel_agent,
+            self.file_improvement_agent,
+            self.reference_imitation_agent,
+        ]
+        if agent in task_brief_agents:
+            return f"{task_result}\n\nQA Agent 质量检查结果：任务单已生成。最终文件由 ChatGPT App / Codex 制作完成后再检查。"
+
+        if agent is self.file_reader_agent:
+            return f"{task_result}\n\nQA Agent 质量检查结果：跳过，文件读取任务不检查原文件是否包含任务指令。"
 
         qa_result = self.qa_agent.check_task_result(task_result, cleaned_task)
 
