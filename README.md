@@ -367,3 +367,27 @@ materials/china/
 ```bash
 python test_china_inspiration_library.py
 ```
+
+## v0.8 Inspiration Agent
+
+Inspiration Agent 用来生成素材灵感计划，自动融合国际灵感库、中国素材库、数据分析网站灵感库和通用制作技巧库。
+
+适合输入：
+
+```text
+帮我找 PPT 优秀作品和素材网站
+帮我找 Word 报告版面灵感
+帮我找 Excel 数据分析看板参考
+```
+
+测试命令：
+
+```bash
+python test_inspiration_agent.py
+```
+
+生成文件位置：
+
+```text
+outputs/inspiration_plans/
+```

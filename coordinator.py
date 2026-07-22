@@ -3,6 +3,7 @@ from agents.browser_agent import BrowserAgent
 from agents.excel_agent import ExcelAgent
 from agents.file_improvement_agent import FileImprovementAgent
 from agents.file_reader_agent import FileReaderAgent
+from agents.inspiration_agent import InspirationAgent
 from agents.iteration_agent import IterationAgent
 from agents.learning_agent import LearningAgent
 from agents.ppt_agent import PPTAgent
@@ -17,6 +18,7 @@ class ChiefCoordinator:
         self.browser_agent = BrowserAgent()
         self.file_improvement_agent = FileImprovementAgent()
         self.file_reader_agent = FileReaderAgent()
+        self.inspiration_agent = InspirationAgent()
         self.iteration_agent = IterationAgent()
         self.learning_agent = LearningAgent()
         self.word_agent = WordAgent()
@@ -52,6 +54,7 @@ class ChiefCoordinator:
         research_keywords = ["调研", "搜索", "资料", "查找", "研究", "竞品", "research"]
         browser_keywords = ["浏览器", "网页", "网站", "打开", "链接", "网址", "url", "browser"]
         learning_keywords = ["学习素材", "素材库", "优秀素材", "技巧库", "经验库", "learning"]
+        inspiration_keywords = ["找灵感", "灵感计划", "素材灵感", "优秀作品", "参考网站", "图片查找", "素材网站"]
         butler_keywords = ["管家", "规划", "复杂任务", "修改已有文件", "参考原文件"]
         file_improvement_keywords = ["优化文件", "改进文件", "美化文件", "润色文件", "修改建议", "版面建议"]
         file_reader_keywords = ["读取文件", "分析文件", "检查文件", ".docx", ".pptx", ".xlsx"]
@@ -71,6 +74,9 @@ class ChiefCoordinator:
 
         if self.has_keyword(task_text, learning_keywords):
             return self.learning_agent
+
+        if self.has_keyword(task_text, inspiration_keywords):
+            return self.inspiration_agent
 
         if self.has_keyword(task_text, browser_keywords):
             return self.browser_agent
