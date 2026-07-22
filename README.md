@@ -32,7 +32,7 @@ outputs/word_documents/
 
 ## v0.3 Excel Agent
 
-Excel Agent 现在可以生成 CSV 表格草稿。
+Excel Agent 现在可以生成正式 `.xlsx` 表格草稿。
 
 测试命令：
 

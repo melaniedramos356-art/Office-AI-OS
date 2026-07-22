@@ -1,6 +1,8 @@
 from pathlib import Path
+from zipfile import ZipFile
 
 from agents.excel_agent import ExcelAgent
+from agents.qa_agent import QAAgent
 
 
 def main():
@@ -24,7 +26,15 @@ def main():
     if not table_path.exists():
         raise AssertionError(f"文件不存在：{table_path}")
 
-    table_content = table_path.read_text(encoding="utf-8-sig")
+    if table_path.suffix.lower() != ".xlsx":
+        raise AssertionError(f"Excel Agent 应该生成 .xlsx 文件，实际是：{table_path}")
+
+    with ZipFile(table_path, "r") as xlsx_file:
+        xlsx_file.read("xl/workbook.xml")
+        xlsx_file.read("xl/worksheets/sheet1.xml")
+
+    qa_agent = QAAgent()
+    table_content = qa_agent.read_file_content(table_path)
     if "客户数据" not in table_content:
         raise AssertionError("表格内容没有写入原始需求。")
 

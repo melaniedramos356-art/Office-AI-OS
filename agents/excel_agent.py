@@ -1,6 +1,7 @@
-import csv
 from datetime import datetime
 from pathlib import Path
+from xml.sax.saxutils import escape
+from zipfile import ZIP_DEFLATED, ZipFile
 
 
 class ExcelAgent:
@@ -31,15 +32,12 @@ class ExcelAgent:
         table_path = self.output_folder / file_name
         rows = self.build_rows(user_task)
 
-        with table_path.open("w", newline="", encoding="utf-8-sig") as file:
-            writer = csv.writer(file)
-            writer.writerows(rows)
-
+        self.write_xlsx(table_path, rows)
         return table_path
 
     def build_file_name(self):
         time_text = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        return f"excel_table_{time_text}.csv"
+        return f"excel_table_{time_text}.xlsx"
 
     def build_rows(self, user_task):
         table_type = self.detect_table_type(user_task)
@@ -93,3 +91,118 @@ class ExcelAgent:
             return "数据统计表"
 
         return "通用表格"
+
+    def write_xlsx(self, table_path, rows):
+        with ZipFile(table_path, "w", ZIP_DEFLATED) as xlsx_file:
+            xlsx_file.writestr("[Content_Types].xml", self.build_content_types_xml())
+            xlsx_file.writestr("_rels/.rels", self.build_root_relationships_xml())
+            xlsx_file.writestr("xl/workbook.xml", self.build_workbook_xml())
+            xlsx_file.writestr("xl/_rels/workbook.xml.rels", self.build_workbook_relationships_xml())
+            xlsx_file.writestr("xl/styles.xml", self.build_styles_xml())
+            xlsx_file.writestr("xl/worksheets/sheet1.xml", self.build_sheet_xml(rows))
+
+    def build_sheet_xml(self, rows):
+        row_xml_list = []
+        for row_index, row in enumerate(rows, start=1):
+            cell_xml_list = []
+            for column_index, value in enumerate(row, start=1):
+                cell_name = f"{self.column_name(column_index)}{row_index}"
+                style_index = self.detect_cell_style(row_index, value)
+                cell_xml_list.append(self.build_text_cell_xml(cell_name, value, style_index))
+
+            row_xml_list.append(f'<row r="{row_index}">{"".join(cell_xml_list)}</row>')
+
+        rows_xml = "".join(row_xml_list)
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            "<cols>"
+            '<col min="1" max="1" width="16" customWidth="1"/>'
+            '<col min="2" max="6" width="18" customWidth="1"/>'
+            "</cols>"
+            f"<sheetData>{rows_xml}</sheetData>"
+            "</worksheet>"
+        )
+
+    def build_text_cell_xml(self, cell_name, value, style_index):
+        safe_value = escape(str(value))
+        return (
+            f'<c r="{cell_name}" t="inlineStr" s="{style_index}">'
+            f"<is><t>{safe_value}</t></is>"
+            "</c>"
+        )
+
+    def detect_cell_style(self, row_index, value):
+        if row_index == 1:
+            return 1
+
+        if str(value) in ["项目", "客户名称", "日期", "序号"]:
+            return 2
+
+        return 0
+
+    def column_name(self, column_index):
+        name = ""
+        while column_index:
+            column_index, remainder = divmod(column_index - 1, 26)
+            name = chr(65 + remainder) + name
+        return name
+
+    def build_content_types_xml(self):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+            "</Types>"
+        )
+
+    def build_root_relationships_xml(self):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            "</Relationships>"
+        )
+
+    def build_workbook_xml(self):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            "<sheets>"
+            '<sheet name="办公表格" sheetId="1" r:id="rId1"/>'
+            "</sheets>"
+            "</workbook>"
+        )
+
+    def build_workbook_relationships_xml(self):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            "</Relationships>"
+        )
+
+    def build_styles_xml(self):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            "<fonts count=\"2\">"
+            '<font><sz val="11"/><name val="Calibri"/></font>'
+            '<font><b/><sz val="11"/><name val="Calibri"/></font>'
+            "</fonts>"
+            '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
+            '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+            '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            '<cellXfs count="3">'
+            '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+            '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
+            "</cellXfs>"
+            "</styleSheet>"
+        )

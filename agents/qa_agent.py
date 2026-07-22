@@ -42,7 +42,7 @@ class QAAgent:
         if isinstance(original_task, str) and original_task.strip() not in file_content:
             problems.append("文件内容没有包含原始需求")
 
-        if file_path.suffix.lower() not in [".md", ".csv", ".txt", ".docx"]:
+        if file_path.suffix.lower() not in [".md", ".csv", ".txt", ".docx", ".xlsx"]:
             problems.append("文件类型暂未纳入当前检查范围")
 
         if problems:
@@ -57,6 +57,9 @@ class QAAgent:
 
         if file_path.suffix.lower() == ".docx":
             return self.read_docx_content(file_path)
+
+        if file_path.suffix.lower() == ".xlsx":
+            return self.read_xlsx_content(file_path)
 
         return file_path.read_text(encoding="utf-8")
 
@@ -74,5 +77,28 @@ class QAAgent:
         for text_node in root.findall(".//w:t", namespace):
             if text_node.text:
                 texts.append(text_node.text)
+
+        return "\n".join(texts)
+
+    def read_xlsx_content(self, file_path):
+        try:
+            with ZipFile(file_path, "r") as xlsx_file:
+                worksheet_names = [
+                    name
+                    for name in xlsx_file.namelist()
+                    if name.startswith("xl/worksheets/") and name.endswith(".xml")
+                ]
+                worksheet_xml_list = [xlsx_file.read(name) for name in worksheet_names]
+        except (BadZipFile, KeyError) as error:
+            raise OSError(f"无法读取 xlsx 内容：{error}")
+
+        texts = []
+        namespace = {"x": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+
+        for worksheet_xml in worksheet_xml_list:
+            root = ElementTree.fromstring(worksheet_xml)
+            for text_node in root.findall(".//x:t", namespace):
+                if text_node.text:
+                    texts.append(text_node.text)
 
         return "\n".join(texts)
