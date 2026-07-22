@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from agents.office_panel_agent import OfficePanelAgent
@@ -13,8 +14,12 @@ def test_office_panel_agent_directly():
         raise AssertionError(f"没有生成办公板块说明：{result}")
 
     panel_path = extract_file_path(result)
+    data_path = extract_data_path(result)
     if not panel_path.exists():
         raise AssertionError(f"文件不存在：{panel_path}")
+
+    if not data_path.exists():
+        raise AssertionError(f"JSON 数据文件不存在：{data_path}")
 
     panel_content = panel_path.read_text(encoding="utf-8")
     required_texts = [
@@ -28,6 +33,17 @@ def test_office_panel_agent_directly():
     for text in required_texts:
         if text not in panel_content:
             raise AssertionError(f"办公板块说明缺少内容：{text}")
+
+    panel_data = json.loads(data_path.read_text(encoding="utf-8"))
+    if len(panel_data.get("cards", [])) < 6:
+        raise AssertionError("办公板块 JSON 缺少功能卡片。")
+
+    if len(panel_data.get("desktop_buttons", [])) < 6:
+        raise AssertionError("办公板块 JSON 缺少桌面按钮。")
+
+    button_agents = [button.get("agent", "") for button in panel_data["desktop_buttons"]]
+    if "Word Agent" not in button_agents or "File Improvement Agent" not in button_agents:
+        raise AssertionError("办公板块 JSON 缺少关键 Agent 按钮。")
 
     print(f"测试通过：Office Panel Agent 已生成文件 {panel_path}")
 
@@ -50,6 +66,13 @@ def extract_file_path(task_result):
         if line.startswith("文件位置："):
             return Path(line.replace("文件位置：", "", 1).strip())
     raise AssertionError(f"结果中没有文件位置：{task_result}")
+
+
+def extract_data_path(task_result):
+    for line in task_result.splitlines():
+        if line.startswith("数据位置："):
+            return Path(line.replace("数据位置：", "", 1).strip())
+    raise AssertionError(f"结果中没有数据位置：{task_result}")
 
 
 def main():

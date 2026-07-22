@@ -396,6 +396,13 @@ outputs/inspiration_plans/
 
 Office Panel Agent 是后续桌面 App 办公首页的后端雏形，用来输出办公功能卡片、按钮建议和每个按钮对应的命令。
 
+它会同时生成：
+
+```text
+office_panel_*.md：给人看的办公板块说明
+office_panel_*.json：给桌面 App 读取的结构化数据
+```
+
 当前办公板块包含：
 
 ```text
