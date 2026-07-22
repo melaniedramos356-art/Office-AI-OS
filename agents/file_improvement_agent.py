@@ -214,94 +214,72 @@ class FileImprovementAgent:
 
     def build_improved_word_paragraphs(self, file_path, file_content):
         original_lines = [line.strip() for line in file_content.splitlines() if line.strip()]
-        preview_lines = original_lines[:8]
+        topic = self.build_improved_topic(file_path, original_lines)
+        content_context = self.build_content_context(original_lines)
 
-        paragraphs = [
-            ("title", "Word 改进版文档"),
-            ("heading", "原文件位置"),
-            ("text", str(file_path)),
-            ("heading", "改进摘要"),
-            ("text", "本文件基于原 Word 内容生成，重点增强结构、文案表达、版面层级和图片素材建议。"),
-            ("heading", "原文内容摘录"),
+        return [
+            ("title", f"{topic}（改进版）"),
+            ("heading", "一、核心摘要"),
+            ("text", f"本文件围绕“{topic}”重新组织内容，突出主题、结论、依据和行动安排。改进版弱化零散说明，强化读者能够直接理解的完整表达，使文档更适合正式阅读、汇报流转和后续归档。"),
+            ("heading", "二、内容基础"),
+            ("text", content_context),
+            ("heading", "三、重点表达"),
+            ("text", "从现有内容看，文档应优先呈现最关键的结论，再展开背景、过程和支撑信息。表达上要减少重复铺垫，把抽象描述转化为具体对象、具体动作和具体结果，让读者在较短时间内把握文件重点。"),
+            ("heading", "四、执行安排"),
+            ("text", "后续推进应围绕目标、责任、时间和质量四个方面展开：目标上明确最终交付物，责任上对应到具体执行主体，时间上形成可检查节点，质量上保留关键依据和过程记录，保证文档内容能够支撑实际工作。"),
+            ("heading", "五、结语"),
+            ("text", "总体来看，改进版文档以清晰结构承接原有内容，以更完整的语言呈现核心信息。全文围绕主题、依据、行动和结果展开，能够作为正式沟通、阶段汇报或内部归档的基础文件使用。"),
         ]
-
-        for line in preview_lines:
-            paragraphs.append(("bullet", line[:160]))
-
-        paragraphs.extend(
-            [
-                ("heading", "结构优化建议"),
-                ("bullet", "先补充核心结论，再展开背景、依据和下一步动作。"),
-                ("bullet", "把长段落拆成短段落或项目符号，提升可读性。"),
-                ("bullet", "统一标题层级，避免同一级标题表达不同信息层次。"),
-                ("heading", "文案润色方向"),
-                ("bullet", "把空泛描述改成具体对象、时间、数据和结果。"),
-                ("bullet", "减少重复表达，保留最能支撑结论的信息。"),
-                ("bullet", "重要结论前置，说明和补充内容后置。"),
-                ("heading", "版面设计方向"),
-                ("bullet", "标题、正文、备注使用不同层级，保持留白和对齐。"),
-                ("bullet", "关键结论后预留截图、流程图或案例图片位置。"),
-                ("heading", "图片素材建议"),
-            ]
-        )
-
-        for source_line in self.inspiration_library.build_source_lines(str(file_path), limit=4):
-            paragraphs.append(("bullet", source_line.replace("- ", "", 1)))
-
-        paragraphs.extend(
-            [
-                ("heading", "待人工确认"),
-                ("bullet", "请确认原文中的真实数据、人员、时间和业务背景是否完整。"),
-                ("bullet", "请确认是否需要继续生成正式可交付版本。"),
-            ]
-        )
-
-        return paragraphs
 
     def build_improved_ppt_slides(self, file_path, file_content):
         original_lines = [line.strip() for line in file_content.splitlines() if line.strip()]
-        preview_lines = original_lines[:5]
+        topic = self.build_improved_topic(file_path, original_lines)
+        preview_lines = self.build_short_points(original_lines, limit=3)
 
         return [
             {
-                "title": "PPT 改进版",
+                "title": f"{topic}改进版汇报",
                 "bullets": [
-                    f"原文件：{file_path}",
-                    "目标：优化页面结构、版面层级、文案表达和图片素材建议",
-                    "说明：本文件不会覆盖原 PPT",
+                    "围绕原文件内容重新组织汇报逻辑",
+                    "用结论式标题提升页面表达效率",
+                    "适合用于正式汇报前的二次打磨",
                 ],
             },
             {
-                "title": "原文件内容摘录",
-                "bullets": preview_lines or ["原文件没有读取到有效文本"],
+                "title": "核心信息已经完成重新梳理",
+                "bullets": preview_lines,
             },
             {
-                "title": "页面结构优化",
+                "title": "汇报主线从信息罗列转向结论表达",
                 "bullets": [
-                    "用目录页明确整体叙事顺序",
-                    "每页只保留一个核心观点",
-                    "把长句改成 3 条以内的短要点",
+                    "先说明核心判断，再补充背景和依据",
+                    "每页只保留一个主要观点",
+                    "用短句承载重点，减少大段文字",
                 ],
             },
             {
-                "title": "结论式标题建议",
+                "title": "关键页面需要突出事实、变化和行动",
                 "bullets": [
-                    "标题直接表达本页结论",
-                    "避免只写背景、问题、方案这类空标题",
-                    "关键页优先突出数据、变化或行动",
+                    "事实页说明当前基础和已完成内容",
+                    "问题页说明影响范围和处理优先级",
+                    "行动页说明责任、节点和交付标准",
                 ],
             },
             {
-                "title": "版面设计建议",
+                "title": "视觉呈现围绕阅读效率展开",
                 "bullets": [
-                    "保持标题、正文、备注区域对齐",
-                    "每页预留图片或图表区域",
-                    "同类页面使用一致的字号和布局",
+                    "标题区承载结论，正文区承载依据",
+                    "同类页面保持一致字号和对齐方式",
+                    "图表、截图和流程图只用于支撑观点",
                 ],
             },
             {
-                "title": "图片素材建议",
-                "bullets": self.build_ppt_source_bullets(str(file_path)),
+                "title": "后续落地聚焦可执行事项",
+                "bullets": [
+                    "用真实数据、案例或现场图片支撑页面观点",
+                    "统一页面风格并检查文字是否过密",
+                    "按汇报场景调整讲述顺序和重点",
+                ],
             },
         ]
 
@@ -319,34 +297,32 @@ class FileImprovementAgent:
 
     def build_improved_excel_rows(self, file_path, file_content):
         original_lines = [line.strip() for line in file_content.splitlines() if line.strip()]
-        preview_lines = original_lines[:8]
+        topic = self.build_improved_topic(file_path, original_lines)
+        preview_lines = self.build_short_points(original_lines, limit=6)
 
         rows = [
-            ["Excel 改进版", ""],
-            ["原文件位置", str(file_path)],
-            ["改进目标", "优化字段结构、数据规则、分析图表和质量检查"],
+            ["Excel 改进版分析表", ""],
+            ["分析主题", topic],
+            ["改进目标", "形成可阅读、可检查、可继续分析的数据文件"],
             [],
-            ["原数据摘录", "内容"],
+            ["核心信息重组", "内容"],
         ]
 
-        if preview_lines:
-            for index, line in enumerate(preview_lines, start=1):
-                rows.append([f"摘录 {index}", line[:160]])
-        else:
-            rows.append(["摘录", "原文件没有读取到有效文本"])
+        for index, line in enumerate(preview_lines, start=1):
+            rows.append([f"信息 {index}", line])
 
         rows.extend(
             [
                 [],
-                ["字段检查", "建议"],
-                ["字段检查", "确认表头是否稳定，避免一列混合多种含义。"],
-                ["字段检查", "日期、金额、状态等字段要保持统一格式。"],
-                ["字段检查", "不确定信息放入备注列，不要污染主要数据列。"],
+                ["分析结论", "内容"],
+                ["结论", "当前数据文件应先明确主题、字段含义和后续分析目标。"],
+                ["结论", "关键信息需要拆成稳定字段，避免一列混合多个含义。"],
+                ["结论", "后续汇报应围绕趋势、对比、占比或异常展开。"],
                 [],
-                ["数据填写规则", "说明"],
-                ["规则", "先替换示例数据，再补充真实业务信息。"],
-                ["规则", "检查空值、重复值、异常值和格式混乱。"],
-                ["规则", "保留原始需求和数据来源，方便后续追溯。"],
+                ["字段规范", "说明"],
+                ["规则", "主题、日期、对象、数值、状态和备注应分列记录。"],
+                ["规则", "日期、金额、数量等字段保持统一格式。"],
+                ["规则", "异常值和缺失值单独标注原因，方便复盘。"],
                 [],
                 ["推荐分析图表", "适用场景"],
                 ["折线图", "适合查看趋势变化。"],
@@ -354,21 +330,49 @@ class FileImprovementAgent:
                 ["饼图", "适合查看占比结构。"],
                 ["排行榜", "适合找出贡献最高或最低的项目。"],
                 [],
-                ["数据分析网站灵感库", "类型", "用途", "链接"],
+                ["数据看板结构", "内容"],
+                ["顶部指标", "展示核心数值、变化幅度和完成情况。"],
+                ["中部图表", "展示趋势、对比和结构。"],
+                ["底部明细", "保留原始记录和异常说明。"],
             ]
         )
-
-        rows.extend(self.data_analysis_inspiration_library.build_source_rows(str(file_path), limit=6))
 
         rows.extend(
             [
                 [],
                 ["质量检查清单", "检查要求"],
-                ["检查", "原数据是否已经保留。"],
+                ["检查", "主题是否清晰。"],
                 ["检查", "关键字段是否存在空值或重复。"],
                 ["检查", "推荐图表是否能支撑最终结论。"],
-                ["检查", "是否需要继续生成正式分析看板。"],
+                ["检查", "明细数据是否便于后续追溯。"],
             ]
         )
 
         return rows
+
+    def build_improved_topic(self, file_path, original_lines):
+        for line in original_lines:
+            cleaned_line = line.strip(" ：:，。")
+            if 2 <= len(cleaned_line) <= 40:
+                return cleaned_line
+
+        return file_path.stem or "办公文件"
+
+    def build_content_context(self, original_lines):
+        points = self.build_short_points(original_lines, limit=5)
+        if not points:
+            return "原文件有效内容较少，改进版已按通用办公文件结构补充主题、重点表达、执行安排和结语。"
+
+        return "；".join(points) + "。"
+
+    def build_short_points(self, original_lines, limit=5):
+        points = []
+        for line in original_lines:
+            cleaned_line = " ".join(line.strip().split())
+            if not cleaned_line:
+                continue
+            points.append(cleaned_line[:80])
+            if len(points) >= limit:
+                break
+
+        return points or ["原文件有效内容较少，需要围绕主题、重点、结论和行动重新组织。"]

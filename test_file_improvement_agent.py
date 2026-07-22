@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from agents.file_improvement_agent import FileImprovementAgent
@@ -6,6 +7,8 @@ from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
 from agents.word_agent import WordAgent
 from coordinator import ChiefCoordinator
+
+os.environ["OFFICE_AI_USE_REAL_MODEL"] = "0"
 
 
 def test_file_improvement_agent_builds_advice():
@@ -52,10 +55,12 @@ def test_file_improvement_agent_creates_word_file():
 
     qa_agent = QAAgent()
     improved_content = qa_agent.read_file_content(Path(improved_document_path))
-    required_texts = ["Word 改进版文档", "结构优化建议", "文案润色方向", "版面设计方向", "图片素材建议"]
+    required_texts = ["改进版", "核心摘要", "内容基础", "重点表达", "执行安排", "结语"]
     for text in required_texts:
         if text not in improved_content:
             raise AssertionError(f"Word 改进版缺少内容：{text}")
+
+    assert_no_improvement_placeholder_text(improved_content)
 
     print("测试通过：File Improvement Agent 可以生成 Word 改进版文件")
 
@@ -74,10 +79,12 @@ def test_file_improvement_agent_creates_ppt_file():
     improved_ppt_path = extract_file_path(result)
     qa_agent = QAAgent()
     improved_content = qa_agent.read_file_content(Path(improved_ppt_path))
-    required_texts = ["PPT 改进版", "页面结构优化", "结论式标题建议", "版面设计建议", "图片素材建议"]
+    required_texts = ["改进版汇报", "核心信息已经完成重新梳理", "汇报主线", "视觉呈现", "后续落地"]
     for text in required_texts:
         if text not in improved_content:
             raise AssertionError(f"PPT 改进版缺少内容：{text}")
+
+    assert_no_improvement_placeholder_text(improved_content)
 
     print("测试通过：File Improvement Agent 可以生成 PPT 改进版文件")
 
@@ -96,10 +103,12 @@ def test_file_improvement_agent_creates_excel_file():
     improved_excel_path = extract_file_path(result)
     qa_agent = QAAgent()
     improved_content = qa_agent.read_file_content(Path(improved_excel_path))
-    required_texts = ["Excel 改进版", "字段检查", "数据填写规则", "推荐分析图表", "质量检查清单"]
+    required_texts = ["Excel 改进版分析表", "核心信息重组", "分析结论", "字段规范", "数据看板结构", "质量检查清单"]
     for text in required_texts:
         if text not in improved_content:
             raise AssertionError(f"Excel 改进版缺少内容：{text}")
+
+    assert_no_improvement_placeholder_text(improved_content)
 
     print("测试通过：File Improvement Agent 可以生成 Excel 改进版文件")
 
@@ -126,6 +135,25 @@ def extract_file_path(task_result):
         if line.startswith("文件位置："):
             return line.replace("文件位置：", "", 1).strip()
     raise AssertionError(f"结果中没有文件位置：{task_result}")
+
+
+def assert_no_improvement_placeholder_text(content):
+    forbidden_texts = [
+        "搜索词",
+        "提示词",
+        "请在这里填写",
+        "请替换",
+        "待人工确认",
+        "需补充",
+        "按实际",
+        "示例",
+        "草稿",
+        "是否需要继续生成正式",
+    ]
+
+    for text in forbidden_texts:
+        if text in content:
+            raise AssertionError(f"改进版成品文件不应该包含提示或占位内容：{text}")
 
 
 def main():

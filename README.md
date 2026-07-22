@@ -299,7 +299,14 @@ python test_file_reader_agent.py
 
 ## v0.6 File Improvement Agent
 
-File Improvement Agent 可以读取用户提供的 Word / PPT / Excel 文件，并输出改进建议。
+File Improvement Agent 可以读取用户提供的 Word / PPT / Excel 文件。
+
+它有两种模式：
+
+```text
+请优化文件 原文件.docx：输出结构、语言、版面和素材方面的诊断建议
+请生成改进版 原文件.docx：直接生成新的改进版成品文件
+```
 
 当前覆盖：
 
@@ -325,6 +332,14 @@ python test_file_improvement_agent.py
 请生成改进版 原文件.docx
 请生成改进版 原文件.pptx
 请生成改进版 原文件.xlsx
+```
+
+改进版文件会尽量生成可直接阅读和汇报的成品：
+
+```text
+Word：生成改进版正文，不再只输出原文摘录和建议清单
+PPT：生成结论式页面，围绕核心信息、汇报主线和后续落地组织
+Excel：生成改进版分析表，包含核心信息、分析结论、字段规范和看板结构
 ```
 
 系统会生成新的 Office 文件，不会覆盖原文件。
