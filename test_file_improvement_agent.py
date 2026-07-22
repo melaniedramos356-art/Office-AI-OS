@@ -25,6 +25,8 @@ def test_file_improvement_agent_builds_advice():
         "文案修改",
         "版面设计",
         "图片建议",
+        "站酷",
+        "花瓣",
     ]
     for text in required_texts:
         if text not in result:

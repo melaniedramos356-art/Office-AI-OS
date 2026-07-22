@@ -8,6 +8,12 @@
 materials/shared/examples/
 ```
 
+如果素材来自国内网站、中文办公案例、国内活动视觉或中文模板，优先放到：
+
+```text
+materials/china/examples/
+```
+
 当前支持文件类型：
 
 ```text

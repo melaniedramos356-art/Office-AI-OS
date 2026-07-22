@@ -1,4 +1,5 @@
 from agents.data_analysis_inspiration_library import DataAnalysisInspirationLibrary
+from agents.china_inspiration_library import ChinaInspirationLibrary
 from agents.file_reader_agent import FileReaderAgent
 from agents.inspiration_library import InspirationLibrary
 from agents.production_technique_library import ProductionTechniqueLibrary
@@ -11,6 +12,7 @@ from agents.excel_agent import ExcelAgent
 class FileImprovementAgent:
     def __init__(self):
         self.file_reader_agent = FileReaderAgent()
+        self.china_inspiration_library = ChinaInspirationLibrary()
         self.inspiration_library = InspirationLibrary()
         self.data_analysis_inspiration_library = DataAnalysisInspirationLibrary()
         self.production_technique_library = ProductionTechniqueLibrary()
@@ -128,7 +130,9 @@ class FileImprovementAgent:
             rows = self.data_analysis_inspiration_library.build_source_rows(user_task, limit=4)
             return "\n".join([f"- {row[0]}：{row[3]}（{row[2]}）" for row in rows])
 
-        return "\n".join(self.inspiration_library.build_source_lines(user_task, limit=4))
+        source_lines = self.inspiration_library.build_source_lines(user_task, limit=4)
+        china_source_lines = self.china_inspiration_library.build_source_lines(user_task, limit=4)
+        return "\n".join(source_lines + china_source_lines)
 
     def build_next_step(self, section_name):
         next_step_map = {
@@ -303,7 +307,8 @@ class FileImprovementAgent:
 
     def build_ppt_source_bullets(self, user_task):
         source_lines = self.inspiration_library.build_source_lines(user_task, limit=4)
-        bullets = [source_line.replace("- ", "", 1) for source_line in source_lines]
+        china_source_lines = self.china_inspiration_library.build_source_lines(user_task, limit=4)
+        bullets = [source_line.replace("- ", "", 1) for source_line in source_lines + china_source_lines]
         bullets.extend(
             [
                 "搜索词：商务汇报 版式 灵感",

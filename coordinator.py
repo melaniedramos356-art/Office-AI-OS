@@ -3,6 +3,7 @@ from agents.browser_agent import BrowserAgent
 from agents.excel_agent import ExcelAgent
 from agents.file_improvement_agent import FileImprovementAgent
 from agents.file_reader_agent import FileReaderAgent
+from agents.iteration_agent import IterationAgent
 from agents.learning_agent import LearningAgent
 from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
@@ -16,6 +17,7 @@ class ChiefCoordinator:
         self.browser_agent = BrowserAgent()
         self.file_improvement_agent = FileImprovementAgent()
         self.file_reader_agent = FileReaderAgent()
+        self.iteration_agent = IterationAgent()
         self.learning_agent = LearningAgent()
         self.word_agent = WordAgent()
         self.excel_agent = ExcelAgent()
@@ -53,9 +55,13 @@ class ChiefCoordinator:
         butler_keywords = ["管家", "规划", "复杂任务", "修改已有文件", "参考原文件"]
         file_improvement_keywords = ["优化文件", "改进文件", "美化文件", "润色文件", "修改建议", "版面建议"]
         file_reader_keywords = ["读取文件", "分析文件", "检查文件", ".docx", ".pptx", ".xlsx"]
+        iteration_keywords = ["迭代", "优化系统", "完善程序", "简化代码", "升级技巧", "制作技巧迭代"]
 
         if self.has_keyword(task_text, butler_keywords):
             return self.ai_butler_agent
+
+        if self.has_keyword(task_text, iteration_keywords):
+            return self.iteration_agent
 
         if self.has_keyword(task_text, file_improvement_keywords):
             return self.file_improvement_agent

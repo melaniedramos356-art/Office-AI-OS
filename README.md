@@ -300,3 +300,67 @@ python test_file_improvement_agent.py
 ```
 
 系统会生成新的 Office 文件，不会覆盖原文件。
+
+## v0.7 Iteration Agent
+
+Iteration Agent 用来管理系统持续迭代。
+
+当前负责：
+
+```text
+生成代码迭代计划
+生成制作技巧迭代计划
+提醒减少重复代码
+提醒把优秀制作技巧沉淀到知识库
+记录下一轮优先级
+```
+
+它不会自动乱改代码，也不会覆盖用户文件。
+
+测试命令：
+
+```bash
+python test_iteration_agent.py
+```
+
+经验库位置：
+
+```text
+memory/experience_library.md
+```
+
+经验库分为两大块：
+
+```text
+程序迭代经验：代码合理性、安全性、简洁性、测试和架构经验
+制作技巧与素材查找经验：版面设计、文案生成、图片查找、图片生成、优秀作品网站查找经验
+```
+
+## v0.7 China Inspiration Library
+
+China Inspiration Library 用来保存中国素材与灵感来源，补充更适合中文办公、中文海报、中文 PPT 和国内活动视觉的参考。
+
+当前已内置：
+
+```text
+站酷
+花瓣
+优设网
+阿里巴巴矢量图标库
+即时设计资源广场
+稿定设计
+图怪兽
+Canva 可画
+```
+
+素材目录：
+
+```text
+materials/china/
+```
+
+测试命令：
+
+```bash
+python test_china_inspiration_library.py
+```
