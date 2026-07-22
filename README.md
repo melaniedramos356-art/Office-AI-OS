@@ -108,6 +108,7 @@ outputs/research_plans/
 ## v0.4 Browser Agent
 
 Browser Agent 现在可以生成浏览器操作计划，暂时不真实控制浏览器。
+操作计划会提前写出预计耗时、操作前准备、最短操作路径和异常处理规则，用来减少实际执行时间。
 
 适合输入：
 

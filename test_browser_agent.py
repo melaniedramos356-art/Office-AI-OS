@@ -29,6 +29,12 @@ def test_browser_agent_directly():
     if "官网网页" not in plan_content:
         raise AssertionError("浏览器操作计划没有写入原始需求。")
 
+    if "最短操作路径" not in plan_content:
+        raise AssertionError("浏览器操作计划没有包含最短操作路径。")
+
+    if "预计耗时" not in plan_content:
+        raise AssertionError("浏览器操作计划没有包含预计耗时。")
+
     print(f"测试通过：Browser Agent 已生成文件 {plan_path}")
 
 
