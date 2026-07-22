@@ -42,7 +42,7 @@ class QAAgent:
         if isinstance(original_task, str) and original_task.strip() not in file_content:
             problems.append("文件内容没有包含原始需求")
 
-        if file_path.suffix.lower() not in [".md", ".csv", ".txt", ".docx", ".xlsx"]:
+        if file_path.suffix.lower() not in [".md", ".csv", ".txt", ".docx", ".xlsx", ".pptx"]:
             problems.append("文件类型暂未纳入当前检查范围")
 
         if problems:
@@ -60,6 +60,9 @@ class QAAgent:
 
         if file_path.suffix.lower() == ".xlsx":
             return self.read_xlsx_content(file_path)
+
+        if file_path.suffix.lower() == ".pptx":
+            return self.read_pptx_content(file_path)
 
         return file_path.read_text(encoding="utf-8")
 
@@ -98,6 +101,29 @@ class QAAgent:
         for worksheet_xml in worksheet_xml_list:
             root = ElementTree.fromstring(worksheet_xml)
             for text_node in root.findall(".//x:t", namespace):
+                if text_node.text:
+                    texts.append(text_node.text)
+
+        return "\n".join(texts)
+
+    def read_pptx_content(self, file_path):
+        try:
+            with ZipFile(file_path, "r") as pptx_file:
+                slide_names = [
+                    name
+                    for name in pptx_file.namelist()
+                    if name.startswith("ppt/slides/slide") and name.endswith(".xml")
+                ]
+                slide_xml_list = [pptx_file.read(name) for name in sorted(slide_names)]
+        except (BadZipFile, KeyError) as error:
+            raise OSError(f"无法读取 pptx 内容：{error}")
+
+        texts = []
+        namespace = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+
+        for slide_xml in slide_xml_list:
+            root = ElementTree.fromstring(slide_xml)
+            for text_node in root.findall(".//a:t", namespace):
                 if text_node.text:
                     texts.append(text_node.text)
 

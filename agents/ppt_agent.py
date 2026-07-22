@@ -1,9 +1,11 @@
 from datetime import datetime
 from pathlib import Path
+from xml.sax.saxutils import escape
+from zipfile import ZIP_DEFLATED, ZipFile
 
 
 class PPTAgent:
-    def __init__(self, output_folder="outputs/ppt_outlines"):
+    def __init__(self, output_folder="outputs/ppt_files"):
         self.output_folder = Path(output_folder)
 
     def handle(self, user_task):
@@ -13,44 +15,40 @@ class PPTAgent:
         cleaned_task = user_task.strip()
 
         try:
-            outline_path = self.create_outline(cleaned_task)
+            presentation_path = self.create_presentation(cleaned_task)
         except OSError as error:
-            return f"PPT Agent 创建演示稿大纲失败：{error}"
+            return f"PPT Agent 创建 PPT 文件失败：{error}"
 
         return (
-            "PPT Agent 已生成演示稿大纲。\n"
+            "PPT Agent 已生成 PPT 文件。\n"
             f"任务内容：{cleaned_task}\n"
-            f"文件位置：{outline_path}"
+            f"文件位置：{presentation_path}"
         )
 
-    def create_outline(self, user_task):
+    def create_presentation(self, user_task):
         self.output_folder.mkdir(parents=True, exist_ok=True)
 
         file_name = self.build_file_name()
-        outline_path = self.output_folder / file_name
-        outline_content = self.build_outline_content(user_task)
+        presentation_path = self.output_folder / file_name
+        slides = self.build_slide_data(user_task)
 
-        outline_path.write_text(outline_content, encoding="utf-8")
-        return outline_path
+        self.write_pptx(presentation_path, slides)
+        return presentation_path
 
     def build_file_name(self):
         time_text = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        return f"ppt_outline_{time_text}.md"
+        return f"ppt_file_{time_text}.pptx"
 
-    def build_outline_content(self, user_task):
+    def build_slide_data(self, user_task):
         presentation_type = self.detect_presentation_type(user_task)
         slides = self.build_slides(presentation_type)
 
-        slide_text = "\n\n".join(slides)
-        return (
-            "# 演示稿大纲\n\n"
-            f"## 原始需求\n\n{user_task}\n\n"
-            f"## 演示类型\n\n{presentation_type}\n\n"
-            f"{slide_text}\n\n"
-            "## 待确认事项\n\n"
-            "- 请补充真实数据、图片、案例或品牌要求。\n"
-            "- 请确认后续是否需要生成正式 PPT 文件。\n"
-        )
+        return [
+            {
+                "title": f"{presentation_type}",
+                "bullets": [user_task, "自动生成的演示稿草稿", "后续可继续补充真实数据和图片"],
+            }
+        ] + slides
 
     def detect_presentation_type(self, user_task):
         if "销售" in user_task or "营收" in user_task or "收入" in user_task:
@@ -70,44 +68,173 @@ class PPTAgent:
     def build_slides(self, presentation_type):
         if presentation_type == "销售汇报":
             return [
-                "## 第 1 页：标题页\n\n- 标题：销售汇报\n- 副标题：时间范围和汇报人",
-                "## 第 2 页：销售概览\n\n- 总销售额\n- 目标完成率\n- 关键变化",
-                "## 第 3 页：重点数据\n\n- 按产品、区域或客户拆分\n- 列出主要增长点",
-                "## 第 4 页：问题与原因\n\n- 未达预期的部分\n- 可能原因",
-                "## 第 5 页：下一步计划\n\n- 重点行动\n- 负责人\n- 时间节点",
+                {"title": "销售概览", "bullets": ["总销售额", "目标完成率", "关键变化"]},
+                {"title": "重点数据", "bullets": ["按产品、区域或客户拆分", "列出主要增长点"]},
+                {"title": "问题与原因", "bullets": ["未达预期的部分", "可能原因"]},
+                {"title": "下一步计划", "bullets": ["重点行动", "负责人", "时间节点"]},
             ]
 
         if presentation_type == "项目汇报":
             return [
-                "## 第 1 页：标题页\n\n- 标题：项目汇报\n- 副标题：项目名称和汇报日期",
-                "## 第 2 页：项目背景\n\n- 项目目标\n- 当前阶段",
-                "## 第 3 页：已完成内容\n\n- 关键成果\n- 已交付事项",
-                "## 第 4 页：风险与问题\n\n- 当前问题\n- 影响范围\n- 解决建议",
-                "## 第 5 页：下一步计划\n\n- 后续任务\n- 负责人\n- 截止时间",
+                {"title": "项目背景", "bullets": ["项目目标", "当前阶段"]},
+                {"title": "已完成内容", "bullets": ["关键成果", "已交付事项"]},
+                {"title": "风险与问题", "bullets": ["当前问题", "影响范围", "解决建议"]},
+                {"title": "下一步计划", "bullets": ["后续任务", "负责人", "截止时间"]},
             ]
 
         if presentation_type == "培训课件":
             return [
-                "## 第 1 页：课程标题\n\n- 培训主题\n- 适合对象",
-                "## 第 2 页：学习目标\n\n- 学完后能掌握什么",
-                "## 第 3 页：核心知识\n\n- 重点概念\n- 操作步骤",
-                "## 第 4 页：案例练习\n\n- 示例场景\n- 练习任务",
-                "## 第 5 页：总结与作业\n\n- 本节重点\n- 后续练习",
+                {"title": "学习目标", "bullets": ["学完后能掌握什么"]},
+                {"title": "核心知识", "bullets": ["重点概念", "操作步骤"]},
+                {"title": "案例练习", "bullets": ["示例场景", "练习任务"]},
+                {"title": "总结与作业", "bullets": ["本节重点", "后续练习"]},
             ]
 
         if presentation_type == "产品/方案介绍":
             return [
-                "## 第 1 页：标题页\n\n- 产品或方案名称\n- 一句话价值说明",
-                "## 第 2 页：用户痛点\n\n- 当前问题\n- 影响结果",
-                "## 第 3 页：解决方案\n\n- 核心能力\n- 使用流程",
-                "## 第 4 页：优势与案例\n\n- 主要优势\n- 示例效果",
-                "## 第 5 页：推进计划\n\n- 下一步动作\n- 需要支持",
+                {"title": "用户痛点", "bullets": ["当前问题", "影响结果"]},
+                {"title": "解决方案", "bullets": ["核心能力", "使用流程"]},
+                {"title": "优势与案例", "bullets": ["主要优势", "示例效果"]},
+                {"title": "推进计划", "bullets": ["下一步动作", "需要支持"]},
             ]
 
         return [
-            "## 第 1 页：标题页\n\n- 演示主题\n- 汇报人和日期",
-            "## 第 2 页：背景\n\n- 为什么做这件事\n- 当前情况",
-            "## 第 3 页：核心内容\n\n- 重点一\n- 重点二\n- 重点三",
-            "## 第 4 页：结论\n\n- 主要结论\n- 判断依据",
-            "## 第 5 页：下一步\n\n- 行动计划\n- 时间安排",
+            {"title": "背景", "bullets": ["为什么做这件事", "当前情况"]},
+            {"title": "核心内容", "bullets": ["重点一", "重点二", "重点三"]},
+            {"title": "结论", "bullets": ["主要结论", "判断依据"]},
+            {"title": "下一步", "bullets": ["行动计划", "时间安排"]},
         ]
+
+    def write_pptx(self, presentation_path, slides):
+        with ZipFile(presentation_path, "w", ZIP_DEFLATED) as pptx_file:
+            pptx_file.writestr("[Content_Types].xml", self.build_content_types_xml(len(slides)))
+            pptx_file.writestr("_rels/.rels", self.build_root_relationships_xml())
+            pptx_file.writestr("ppt/presentation.xml", self.build_presentation_xml(len(slides)))
+            pptx_file.writestr("ppt/_rels/presentation.xml.rels", self.build_presentation_relationships_xml(len(slides)))
+            pptx_file.writestr("ppt/presProps.xml", self.build_empty_xml("p:presentationPr"))
+            pptx_file.writestr("ppt/viewProps.xml", self.build_empty_xml("p:viewPr"))
+            pptx_file.writestr("ppt/tableStyles.xml", self.build_table_styles_xml())
+
+            for index, slide in enumerate(slides, start=1):
+                pptx_file.writestr(f"ppt/slides/slide{index}.xml", self.build_slide_xml(slide))
+
+    def build_content_types_xml(self, slide_count):
+        slide_overrides = "".join(
+            [
+                f'<Override PartName="/ppt/slides/slide{index}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
+                for index in range(1, slide_count + 1)
+            ]
+        )
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>'
+            '<Override PartName="/ppt/presProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presProps+xml"/>'
+            '<Override PartName="/ppt/viewProps.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.viewProps+xml"/>'
+            '<Override PartName="/ppt/tableStyles.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.tableStyles+xml"/>'
+            f"{slide_overrides}"
+            "</Types>"
+        )
+
+    def build_root_relationships_xml(self):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>'
+            "</Relationships>"
+        )
+
+    def build_presentation_xml(self, slide_count):
+        slide_ids = "".join(
+            [
+                f'<p:sldId id="{255 + index}" r:id="rId{index}"/>'
+                for index in range(1, slide_count + 1)
+            ]
+        )
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+            'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            f"<p:sldIdLst>{slide_ids}</p:sldIdLst>"
+            '<p:sldSz cx="12192000" cy="6858000" type="wide"/>'
+            '<p:notesSz cx="6858000" cy="9144000"/>'
+            "</p:presentation>"
+        )
+
+    def build_presentation_relationships_xml(self, slide_count):
+        slide_relationships = "".join(
+            [
+                f'<Relationship Id="rId{index}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide{index}.xml"/>'
+                for index in range(1, slide_count + 1)
+            ]
+        )
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            f"{slide_relationships}"
+            "</Relationships>"
+        )
+
+    def build_slide_xml(self, slide):
+        title_shape = self.build_text_shape_xml(2, slide["title"], 700000, 450000, 10800000, 900000, 40, True)
+        bullet_shapes = []
+        for index, bullet in enumerate(slide["bullets"], start=1):
+            bullet_shapes.append(
+                self.build_text_shape_xml(
+                    2 + index,
+                    f"• {bullet}",
+                    950000,
+                    1550000 + (index - 1) * 720000,
+                    10200000,
+                    560000,
+                    24,
+                    False,
+                )
+            )
+
+        shapes_xml = title_shape + "".join(bullet_shapes)
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+            'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">'
+            "<p:cSld>"
+            "<p:spTree>"
+            "<p:nvGrpSpPr><p:cNvPr id=\"1\" name=\"\"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>"
+            "<p:grpSpPr><a:xfrm><a:off x=\"0\" y=\"0\"/><a:ext cx=\"0\" cy=\"0\"/><a:chOff x=\"0\" y=\"0\"/><a:chExt cx=\"0\" cy=\"0\"/></a:xfrm></p:grpSpPr>"
+            f"{shapes_xml}"
+            "</p:spTree>"
+            "</p:cSld>"
+            "<p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>"
+            "</p:sld>"
+        )
+
+    def build_text_shape_xml(self, shape_id, text, x, y, width, height, font_size, is_bold):
+        safe_text = escape(text)
+        bold_xml = ' b="1"' if is_bold else ""
+        return (
+            "<p:sp>"
+            f'<p:nvSpPr><p:cNvPr id="{shape_id}" name="TextBox {shape_id}"/><p:cNvSpPr txBox="1"/><p:nvPr/></p:nvSpPr>'
+            f'<p:spPr><a:xfrm><a:off x="{x}" y="{y}"/><a:ext cx="{width}" cy="{height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>'
+            "<p:txBody><a:bodyPr wrap=\"square\"/><a:lstStyle/>"
+            f'<a:p><a:r><a:rPr lang="zh-CN" sz="{font_size * 100}"{bold_xml}/><a:t>{safe_text}</a:t></a:r></a:p>'
+            "</p:txBody>"
+            "</p:sp>"
+        )
+
+    def build_empty_xml(self, root_name):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            f'<{root_name} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+            f'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+            f'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>'
+        )
+
+    def build_table_styles_xml(self):
+        return (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<a:tblStyleLst xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" def="{5940675A-B579-460E-94D1-54222C63F5DA}"/>'
+        )

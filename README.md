@@ -48,7 +48,7 @@ outputs/excel_files/
 
 ## v0.3 PPT Agent
 
-PPT Agent 现在可以生成 Markdown 演示稿大纲。
+PPT Agent 现在可以生成正式 `.pptx` 演示稿草稿。
 
 测试命令：
 
@@ -59,7 +59,7 @@ python test_ppt_agent.py
 生成文件位置：
 
 ```text
-outputs/ppt_outlines/
+outputs/ppt_files/
 ```
 
 ## v0.4 QA Agent
