@@ -45,3 +45,19 @@ python test_excel_agent.py
 ```text
 outputs/excel_files/
 ```
+
+## v0.3 PPT Agent
+
+PPT Agent 现在可以生成 Markdown 演示稿大纲。
+
+测试命令：
+
+```bash
+python test_ppt_agent.py
+```
+
+生成文件位置：
+
+```text
+outputs/ppt_outlines/
+```
