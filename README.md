@@ -329,6 +329,32 @@ python test_file_improvement_agent.py
 
 系统会生成新的 Office 文件，不会覆盖原文件。
 
+## v0.6 Reference Imitation Agent
+
+Reference Imitation Agent 用来做参考文件仿写：读取用户提供的 Word / PPT / Excel 参考文件，提取结构和内容节奏，再按新主题生成同类型成品文件。
+
+适合输入：
+
+```text
+请参考 C:\路径\参考.docx 仿写一份关于大学生竞选班长的 Word 文档
+请按照 C:\路径\参考.pptx 仿写一份项目汇报 PPT
+请参考 C:\路径\参考.xlsx 生成类似结构的客户跟进 Excel 表格
+```
+
+当前规则：
+
+```text
+只生成新文件，不覆盖参考文件
+只复用结构和表达节奏，不照抄原文
+最终文件不写入提示词、占位词或待填写内容
+```
+
+测试命令：
+
+```bash
+python test_reference_imitation_agent.py
+```
+
 ## v0.7 Iteration Agent
 
 Iteration Agent 用来管理系统持续迭代。

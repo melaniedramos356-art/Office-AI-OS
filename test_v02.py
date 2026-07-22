@@ -21,6 +21,7 @@ def main():
         run_test("帮我整理一份客户数据 Excel 表格", "Excel Agent")
         run_test("帮我写一份项目总结 Word 文档", "Word Agent")
         run_test("请完善办公板块", "Office Panel Agent")
+        run_test("请参考 C:\\test\\demo.docx 仿写新文档", "Reference Imitation Agent")
         run_test("", "任务内容不能为空")
     except Exception as error:
         print(f"测试失败：{error}")

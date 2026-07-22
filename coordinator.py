@@ -9,6 +9,7 @@ from agents.learning_agent import LearningAgent
 from agents.office_panel_agent import OfficePanelAgent
 from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
+from agents.reference_imitation_agent import ReferenceImitationAgent
 from agents.research_agent import ResearchAgent
 from agents.word_agent import WordAgent
 
@@ -28,6 +29,7 @@ class ChiefCoordinator:
         self.ppt_agent = PPTAgent()
         self.research_agent = ResearchAgent()
         self.qa_agent = QAAgent()
+        self.reference_imitation_agent = ReferenceImitationAgent()
 
     def handle_task(self, user_task):
         if not isinstance(user_task, str):
@@ -59,12 +61,16 @@ class ChiefCoordinator:
         inspiration_keywords = ["找灵感", "灵感计划", "素材灵感", "优秀作品", "参考网站", "图片查找", "素材网站"]
         office_panel_keywords = ["办公板块", "办公首页", "办公功能", "办公模块", "三大办公", "交互页面"]
         butler_keywords = ["管家", "规划", "复杂任务", "修改已有文件", "参考原文件"]
+        imitation_keywords = ["仿写", "模仿", "参考生成", "照着", "类似风格"]
         file_improvement_keywords = ["优化文件", "改进文件", "美化文件", "润色文件", "修改建议", "版面建议"]
         file_reader_keywords = ["读取文件", "分析文件", "检查文件", ".docx", ".pptx", ".xlsx"]
         iteration_keywords = ["迭代", "优化系统", "完善程序", "简化代码", "升级技巧", "制作技巧迭代"]
 
         if self.has_keyword(task_text, butler_keywords):
             return self.ai_butler_agent
+
+        if self.has_keyword(task_text, imitation_keywords):
+            return self.reference_imitation_agent
 
         if self.has_keyword(task_text, iteration_keywords):
             return self.iteration_agent
