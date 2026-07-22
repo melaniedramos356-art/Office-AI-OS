@@ -129,3 +129,32 @@ python test_browser_agent.py
 ```text
 outputs/browser_plans/
 ```
+
+## v0.4 Learning Agent
+
+Learning Agent 现在可以扫描优秀素材库，并把结构、标题和关键词沉淀到 `memory`。
+
+素材库位置：
+
+```text
+materials/
+```
+
+适合输入：
+
+```text
+请学习素材库里的优秀素材
+```
+
+测试命令：
+
+```bash
+python test_learning_agent.py
+```
+
+输出文件：
+
+```text
+memory/learned_techniques.md
+memory/material_index.md
+```
