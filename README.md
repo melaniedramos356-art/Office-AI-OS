@@ -161,3 +161,37 @@ memory/generation_advice.md
 ```
 
 Word / Excel / PPT Agent 会读取 `memory/generation_advice.md`，把素材库技巧和图片搜索建议写入生成文件。
+
+## v0.5 Model Router
+
+Model Router 是多模型调度框架，当前先使用 Mock 模型，不连接真实 API。
+
+已预留模型供应商：
+
+```text
+DeepSeek
+豆包 Doubao
+Kimi
+OpenAI
+Claude
+Gemini
+本地模型
+```
+
+测试命令：
+
+```bash
+python test_model_router.py
+```
+
+DeepSeek 真实调用测试：
+
+```bash
+python test_deepseek_client.py
+```
+
+DeepSeek API Key 只从环境变量读取：
+
+```text
+DEEPSEEK_API_KEY
+```
