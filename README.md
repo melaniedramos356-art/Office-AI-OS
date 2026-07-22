@@ -158,9 +158,12 @@ python test_learning_agent.py
 memory/learned_techniques.md
 memory/material_index.md
 memory/generation_advice.md
+memory/production_techniques.md
 ```
 
 Word / Excel / PPT Agent 会读取 `memory/generation_advice.md`，把素材库技巧和图片搜索建议写入生成文件。
+
+Learning Agent 也会更新 `memory/production_techniques.md`，让版面设计、文案生成、图片查找、图片生成和数据表达技巧持续迭代。
 
 ## v0.5 Model Router
 

@@ -16,7 +16,7 @@ class LearningAgent:
         cleaned_task = user_task.strip()
 
         try:
-            learned_path, index_path, material_count = self.learn_from_materials(cleaned_task)
+            learned_path, index_path, production_path, material_count = self.learn_from_materials(cleaned_task)
         except OSError as error:
             return f"Learning Agent 学习素材失败：{error}"
 
@@ -25,7 +25,8 @@ class LearningAgent:
             f"任务内容：{cleaned_task}\n"
             f"素材数量：{material_count}\n"
             f"文件位置：{learned_path}\n"
-            f"索引位置：{index_path}"
+            f"索引位置：{index_path}\n"
+            f"制作技巧位置：{production_path}"
         )
 
     def learn_from_materials(self, user_task):
@@ -36,16 +37,19 @@ class LearningAgent:
         learned_content = self.build_learned_content(user_task, materials)
         index_content = self.build_index_content(user_task, materials)
         advice_content = self.build_generation_advice_content(user_task, materials)
+        production_content = self.build_production_techniques_content(user_task, materials)
 
         learned_path = self.memory_folder / "learned_techniques.md"
         index_path = self.memory_folder / "material_index.md"
         advice_path = self.memory_folder / "generation_advice.md"
+        production_path = self.memory_folder / "production_techniques.md"
 
         learned_path.write_text(learned_content, encoding="utf-8")
         index_path.write_text(index_content, encoding="utf-8")
         advice_path.write_text(advice_content, encoding="utf-8")
+        production_path.write_text(production_content, encoding="utf-8")
 
-        return learned_path, index_path, len(materials)
+        return learned_path, index_path, production_path, len(materials)
 
     def collect_materials(self):
         if not self.materials_folder.exists():
@@ -270,6 +274,85 @@ class LearningAgent:
             f"## {section_name} 图片搜索建议\n\n"
             f"{image_text}\n"
         )
+
+    def build_production_techniques_content(self, user_task, materials):
+        time_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        material_sections = self.unique_items([material["section"] for material in materials])
+        all_sections = self.unique_items(["shared", "china", "word", "ppt", "excel"] + material_sections)
+
+        blocks = []
+        for section_name in all_sections:
+            blocks.append(self.build_production_techniques_block(section_name, materials))
+        blocks_text = "\n".join(blocks).rstrip()
+
+        return (
+            "# 通用制作技巧库\n\n"
+            "这个文件由 Learning Agent 根据优秀素材自动更新。\n\n"
+            f"## 原始需求\n\n{user_task}\n\n"
+            f"## 更新时间\n\n{time_text}\n\n"
+            "## 使用方式\n\n"
+            "- Word / PPT / Excel Agent 会读取 shared、china 和自身板块技巧。\n"
+            "- 新素材加入 materials 后，重新运行 Learning Agent 即可刷新技巧。\n"
+            "- 技巧重点覆盖版面设计、文案生成、图片查找、图片生成和数据表达。\n\n"
+            f"{blocks_text}\n"
+        )
+
+    def build_production_techniques_block(self, section_name, materials):
+        section_materials = [material for material in materials if material["section"] == section_name]
+        learned_headings = []
+        learned_keywords = []
+
+        for material in section_materials:
+            learned_headings.extend(material["headings"])
+            learned_keywords.extend(material["keywords"])
+
+        default_techniques = self.build_default_production_techniques(section_name)
+        learned_techniques = self.build_learned_production_techniques(section_name, learned_headings, learned_keywords)
+        techniques = self.unique_items(default_techniques + learned_techniques)[:10]
+        technique_text = "\n".join([f"- {technique}" for technique in techniques])
+
+        return f"## {section_name} 制作技巧\n\n{technique_text}\n"
+
+    def build_default_production_techniques(self, section_name):
+        technique_map = {
+            "shared": [
+                "版面设计：先确定信息层级，把标题、重点、补充说明分开呈现。",
+                "文案生成：先明确对象、目的和行动，再补充细节和证据。",
+                "图片查找：优先找真实场景图、产品图、流程图、数据图或案例截图。",
+                "图片生成：提示词要写清主体、场景、风格、比例和用途。",
+            ],
+            "china": [
+                "中国素材：中文办公内容优先参考国内素材，表达更贴近实际使用场景。",
+                "中国素材：查找国内活动视觉、营销海报、图标和模板时优先记录来源。",
+            ],
+            "word": [
+                "Word：段落先搭结构，再润色语言，最后检查标题层级。",
+                "Word：长文档要增加摘要、结论和待确认事项。",
+            ],
+            "ppt": [
+                "PPT：每页只讲一个重点，标题要表达这一页的结论。",
+                "PPT：图片和图表要服务观点，不要只做装饰。",
+            ],
+            "excel": [
+                "Excel：先保证字段稳定和数据干净，再考虑图表和看板。",
+                "Excel：图表要围绕趋势、对比、占比或异常来选择。",
+            ],
+        }
+
+        return technique_map.get(section_name, ["先明确目标，再组织内容。"])
+
+    def build_learned_production_techniques(self, section_name, learned_headings, learned_keywords):
+        techniques = []
+        heading_text = "、".join(self.unique_items(learned_headings)[:5])
+        keyword_text = "、".join(self.unique_items(learned_keywords)[:5])
+
+        if heading_text:
+            techniques.append(f"{section_name}：可参考素材结构：{heading_text}。")
+
+        if keyword_text:
+            techniques.append(f"{section_name}：常见技巧关键词包括：{keyword_text}。")
+
+        return techniques
 
     def build_default_generation_advice(self, section_name):
         advice_map = {

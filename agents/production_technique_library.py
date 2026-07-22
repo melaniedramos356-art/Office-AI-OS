@@ -17,8 +17,9 @@ class ProductionTechniqueLibrary:
             return default_techniques
 
         shared_techniques = self.extract_section_techniques(technique_content, "shared")
+        china_techniques = self.extract_section_techniques(technique_content, "china")
         section_techniques = self.extract_section_techniques(technique_content, section_name)
-        merged_techniques = shared_techniques + section_techniques
+        merged_techniques = shared_techniques + china_techniques + section_techniques
 
         return merged_techniques[:8] or default_techniques
 
