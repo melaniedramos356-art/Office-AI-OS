@@ -16,7 +16,7 @@ python test_v02.py
 
 ## v0.3 Word Agent
 
-Word Agent 现在可以生成正式 `.docx` 文档草稿。
+Word Agent 现在可以生成正式 `.docx` 成品文档。
 
 测试命令：
 
@@ -32,7 +32,7 @@ outputs/word_documents/
 
 ## v0.3 Excel Agent
 
-Excel Agent 现在可以生成正式 `.xlsx` 表格草稿。
+Excel Agent 现在可以生成正式 `.xlsx` 成品表格。
 
 测试命令：
 
@@ -48,7 +48,7 @@ outputs/excel_files/
 
 ## v0.3 PPT Agent
 
-PPT Agent 现在可以生成正式 `.pptx` 演示稿草稿。
+PPT Agent 现在可以生成正式 `.pptx` 成品演示稿。
 
 测试命令：
 
@@ -161,7 +161,9 @@ memory/generation_advice.md
 memory/production_techniques.md
 ```
 
-Word / Excel / PPT Agent 会读取 `memory/generation_advice.md`，把素材库技巧和图片搜索建议写入生成文件。
+Word / Excel / PPT Agent 生成成品文件时，只写入用户可直接使用的正文、演示内容或表格数据。
+
+素材库技巧和图片搜索建议只作为后台生成参考，不直接写入最终 Word / PPT / Excel 成品文件。
 
 Learning Agent 也会更新 `memory/production_techniques.md`，让版面设计、文案生成、图片查找、图片生成和数据表达技巧持续迭代。
 
@@ -199,15 +201,15 @@ DeepSeek API Key 只从环境变量读取：
 DEEPSEEK_API_KEY
 ```
 
-Excel Agent 已接入 Model Router。当前会优先使用 DeepSeek 生成字段建议，并写入 `.xlsx` 文件。
+Model Router 会保留给后续多模型分析、文案润色、图片理解和数据分析使用。
 
-Excel Agent 已增加数据分析网站灵感库。生成 `.xlsx` 时会写入 Tableau Public、Power BI Data Stories、Looker Studio Gallery、Flourish Examples 等数据分析参考来源。
+Excel 数据分析网站灵感库会在 Inspiration Agent 和后续分析规划中使用，不直接写入 `.xlsx` 成品表格。
 
 Excel Agent 已增加表格使用说明、数据填写规则、推荐分析图表和质量检查清单，方便把表格继续完善成数据分析看板或汇报材料。
 
-PPT Agent 已增加目录页和 AI 结构建议页。当前在 Kimi / Doubao 未接入前，会先写入本地兜底结构建议。
+PPT Agent 已增加目录页。最终 PPT 只保留成品演示内容。
 
-Word Agent 已增加文档摘要、AI 结构建议和灵感素材查找建议。当前在 Kimi 未接入前，会先写入本地兜底结构建议。
+Word Agent 已增加文档摘要和专题报告生成能力。最终 Word 只保留成品文档内容。
 
 ## v0.5 Inspiration Library
 

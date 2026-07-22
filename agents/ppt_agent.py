@@ -3,14 +3,10 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
-from models.model_router import ModelRouter
-
 
 class PPTAgent:
     def __init__(self, output_folder="outputs/ppt_files"):
         self.output_folder = Path(output_folder)
-        self.model_router = ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -45,13 +41,14 @@ class PPTAgent:
 
     def build_slide_data(self, user_task):
         presentation_type = self.detect_presentation_type(user_task)
+        topic = self.extract_clean_topic(user_task)
         slides = self.build_slides(presentation_type)
         agenda_slide = self.build_agenda_slide(slides)
 
         slide_data = [
             {
                 "title": f"{presentation_type}",
-                "bullets": [user_task, "目标：清晰说明背景、重点内容和下一步安排"],
+                "bullets": [f"主题：{topic}", "目标：清晰说明背景、重点内容和下一步安排"],
             }
         ] + [agenda_slide] + slides
         return slide_data
@@ -68,30 +65,25 @@ class PPTAgent:
             "bullets": agenda_items[:5] or ["背景", "核心内容", "结论", "下一步"],
         }
 
-    def build_model_advice(self, user_task, presentation_type, slides):
-        slide_titles = "、".join([slide["title"] for slide in slides])
-        prompt = (
-            "请为下面的 PPT 生成 3 条结构优化建议。"
-            "要求：只输出 3 行，每行一条建议，不要输出长篇解释。\n\n"
-            f"PPT 类型：{presentation_type}\n"
-            f"用户需求：{user_task}\n"
-            f"当前页面：{slide_titles}"
-        )
-        generation = self.model_router.generate("ppt", prompt)
-        route_info = generation.get("route", {})
-        result = generation.get("result", "")
-
-        if route_info.get("status") != "available" or is_unusable_model_result(result):
-            return self.build_fallback_model_advice()
-
-        return split_advice_lines(result, self.build_fallback_model_advice())
-
-    def build_fallback_model_advice(self):
-        return [
-            "先讲结论，再展开背景和依据。",
-            "每页只保留 3 个以内重点，避免一页塞太多文字。",
-            "关键页预留图片、图表或案例位置，方便后续增强视觉效果。",
+    def extract_clean_topic(self, user_task):
+        cleaned_topic = user_task
+        removable_words = [
+            "帮我",
+            "生成",
+            "做一份",
+            "写一份",
+            "制作",
+            "PPT",
+            "ppt",
+            "演示稿",
         ]
+
+        for word in removable_words:
+            cleaned_topic = cleaned_topic.replace(word, "")
+
+        cleaned_topic = cleaned_topic.strip(" ：:，。")
+        return cleaned_topic or "办公汇报"
+
 
     def detect_presentation_type(self, user_task):
         if "销售" in user_task or "营收" in user_task or "收入" in user_task:
@@ -121,7 +113,7 @@ class PPTAgent:
             return [
                 {"title": "项目背景", "bullets": ["项目目标", "当前阶段"]},
                 {"title": "已完成内容", "bullets": ["关键成果", "已交付事项"]},
-                {"title": "风险与问题", "bullets": ["当前问题", "影响范围", "解决建议"]},
+                {"title": "风险与问题", "bullets": ["当前问题", "影响范围", "应对措施"]},
                 {"title": "下一步计划", "bullets": ["后续任务", "负责人", "截止时间"]},
             ]
 
@@ -129,7 +121,7 @@ class PPTAgent:
             return [
                 {"title": "学习目标", "bullets": ["学完后能掌握什么"]},
                 {"title": "核心知识", "bullets": ["重点概念", "操作步骤"]},
-                {"title": "案例练习", "bullets": ["示例场景", "练习任务"]},
+                {"title": "案例练习", "bullets": ["典型场景", "练习任务"]},
                 {"title": "总结与作业", "bullets": ["本节重点", "后续练习"]},
             ]
 
@@ -137,7 +129,7 @@ class PPTAgent:
             return [
                 {"title": "用户痛点", "bullets": ["当前问题", "影响结果"]},
                 {"title": "解决方案", "bullets": ["核心能力", "使用流程"]},
-                {"title": "优势与案例", "bullets": ["主要优势", "示例效果"]},
+                {"title": "优势与案例", "bullets": ["主要优势", "典型效果"]},
                 {"title": "推进计划", "bullets": ["下一步动作", "需要支持"]},
             ]
 

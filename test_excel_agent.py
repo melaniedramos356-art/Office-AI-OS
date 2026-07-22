@@ -50,12 +50,13 @@ def main():
     if "质量检查清单" not in table_content:
         raise AssertionError("Excel 表格没有写入质量检查清单。")
 
-    if "字段完善方向" not in table_content:
-        raise AssertionError("Excel 表格没有写入字段完善方向。")
+    if "字段说明" not in table_content:
+        raise AssertionError("Excel 表格没有写入字段说明。")
 
     forbidden_texts = [
         "素材库生成建议",
         "DeepSeek 字段建议",
+        "字段完善方向",
         "通用制作技巧",
         "数据分析网站灵感库",
         "搜索词",
@@ -63,6 +64,11 @@ def main():
         "请在这里填写",
         "请替换",
         "示例",
+        "待采集",
+        "需补充",
+        "按实际",
+        "草稿",
+        "原始需求",
     ]
     for text in forbidden_texts:
         if text in table_content:

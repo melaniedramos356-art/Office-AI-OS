@@ -50,6 +50,11 @@ def main():
         "提示词",
         "请在这里填写",
         "请替换",
+        "示例",
+        "草稿",
+        "预留",
+        "Dribbble",
+        "Behance",
     ]
     for text in forbidden_texts:
         if text in presentation_content:

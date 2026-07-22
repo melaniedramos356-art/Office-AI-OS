@@ -3,14 +3,10 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
-from models.model_router import ModelRouter
-
 
 class WordAgent:
     def __init__(self, output_folder="outputs/word_documents"):
         self.output_folder = Path(output_folder)
-        self.model_router = ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -84,7 +80,7 @@ class WordAgent:
 
         return (
             f"本文围绕“{user_task}”展开，按背景、重点内容和后续安排组织，"
-            "可作为正式文档初稿继续补充真实数据和单位信息。"
+            "形成一份结构清晰、可直接阅读和流转的办公文档。"
         )
 
     def extract_clean_title(self, user_task, document_type):
@@ -93,31 +89,6 @@ class WordAgent:
         if cleaned_task:
             return cleaned_task
         return document_type
-
-    def build_model_advice(self, user_task, document_type, sections):
-        section_titles = "、".join([section[0] for section in sections])
-        prompt = (
-            "请为下面的 Word 办公文档生成 3 条结构优化建议。"
-            "要求：只输出 3 行，每行一条建议，不要输出长篇解释。\n\n"
-            f"文档类型：{document_type}\n"
-            f"用户需求：{user_task}\n"
-            f"当前章节：{section_titles}"
-        )
-        generation = self.model_router.generate("word", prompt)
-        route_info = generation.get("route", {})
-        result = generation.get("result", "")
-
-        if route_info.get("status") != "available" or is_unusable_model_result(result):
-            return self.build_fallback_model_advice()
-
-        return split_advice_lines(result, self.build_fallback_model_advice())
-
-    def build_fallback_model_advice(self):
-        return [
-            "先写结论和目的，再补充背景和过程。",
-            "每个章节只处理一个主题，避免把问题、原因和计划混在一起。",
-            "关键结论后面预留数据、案例或截图位置，方便后续补强可信度。",
-        ]
 
     def detect_document_type(self, user_task):
         if self.is_student_summer_safety_task(user_task):
@@ -243,7 +214,7 @@ class WordAgent:
         return [
             ("主题", self.extract_clean_title(user_task, document_type)),
             ("正文", f"本文围绕“{user_task}”展开，先说明背景，再呈现重点内容，最后给出结论和后续建议。"),
-            ("补充说明", "如需形成正式版本，可继续补充真实数据、案例来源、单位名称和时间信息。"),
+            ("结论", "整体内容应围绕主题保持一致，重点突出事实、判断和行动安排，使读者能够快速理解核心事项。"),
         ]
 
     def build_low_altitude_capital_report_sections(self):

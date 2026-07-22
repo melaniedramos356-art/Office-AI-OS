@@ -46,7 +46,7 @@ class AIButlerAgent:
             ]
 
         return [
-            "- 用户没有提供原文件时，直接按需求生成新的 Word / PPT / Excel 草稿。",
+            "- 用户没有提供原文件时，直接按需求生成新的 Word / PPT / Excel 成品文件。",
             "- 生成后保留原始需求，方便后续追溯和二次修改。",
         ]
 
@@ -67,7 +67,7 @@ class AIButlerAgent:
             steps.append("- 图片理解、图片生成和视觉判断优先交给 Doubao / OpenAI 多模态模型。")
 
         if "数据" in user_task or "excel" in user_task.lower() or "表格" in user_task:
-            steps.append("- 数据分析、字段建议和逻辑检查优先交给 DeepSeek。")
+            steps.append("- 数据分析、字段设计和逻辑检查优先交给 DeepSeek。")
 
         if "文案" in user_task or "word" in user_task.lower() or "润色" in user_task:
             steps.append("- 文案润色、语言丰富和长文档结构优先交给 Kimi / OpenAI。")

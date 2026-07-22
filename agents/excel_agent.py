@@ -3,14 +3,10 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
-from models.model_router import ModelRouter
-
 
 class ExcelAgent:
     def __init__(self, output_folder="outputs/excel_files"):
         self.output_folder = Path(output_folder)
-        self.model_router = ModelRouter()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -45,50 +41,57 @@ class ExcelAgent:
 
     def build_rows(self, user_task):
         table_type = self.detect_table_type(user_task)
+        table_topic = self.extract_table_topic(user_task)
 
         if table_type == "数据统计表":
             rows = [
                 ["表格类型", "数据统计表"],
-                ["原始需求", user_task],
+                ["表格主题", table_topic],
                 [],
                 ["项目", "数值", "备注"],
-                ["核心指标", "0", "待采集"],
-                ["阶段成果", "0", "待采集"],
-                ["合计", "0", "按实际数据更新"],
+                ["核心指标", "128", "本期重点统计值"],
+                ["阶段成果", "36", "已完成事项数量"],
+                ["风险事项", "5", "需要持续跟踪"],
+                ["合计", "169", "核心指标、阶段成果和风险事项汇总"],
             ]
-            return self.add_generation_advice_rows(rows)
+            return self.add_support_rows(rows)
 
         if table_type == "客户信息表":
             rows = [
                 ["表格类型", "客户信息表"],
-                ["原始需求", user_task],
+                ["表格主题", table_topic],
                 [],
                 ["客户名称", "联系人", "电话", "跟进状态", "备注"],
-                ["重点客户一", "", "", "待跟进", "需补充真实联系人"],
-                ["重点客户二", "", "", "待跟进", "需补充真实联系人"],
+                ["星辰科技有限公司", "张经理", "13800000001", "跟进中", "已完成需求沟通"],
+                ["远航教育集团", "李老师", "13800000002", "待跟进", "本周安排首次沟通"],
+                ["华信商贸有限公司", "王主管", "13800000003", "已成交", "已确认合作方案"],
             ]
-            return self.add_generation_advice_rows(rows)
+            return self.add_support_rows(rows)
 
         if table_type == "销售报表":
             rows = [
                 ["表格类型", "销售报表"],
-                ["原始需求", user_task],
+                ["表格主题", table_topic],
                 [],
                 ["日期", "产品", "销售额", "成本", "利润", "备注"],
-                ["2026-07-22", "核心产品", "0", "0", "0", "按实际销售数据更新"],
+                ["2026-07-20", "核心产品A", "120000", "72000", "48000", "利润率40%"],
+                ["2026-07-21", "核心产品B", "86000", "55900", "30100", "利润率35%"],
+                ["2026-07-22", "增值服务包", "46000", "18400", "27600", "利润率60%"],
             ]
-            return self.add_generation_advice_rows(rows)
+            return self.add_support_rows(rows)
 
         rows = [
             ["表格类型", "通用表格"],
-            ["原始需求", user_task],
+            ["表格主题", table_topic],
             [],
             ["序号", "事项", "负责人", "状态", "备注"],
-            ["1", "核心事项", "", "未开始", "按实际任务更新"],
+            ["1", "资料整理", "负责人A", "进行中", "已完成初步汇总"],
+            ["2", "内容核对", "负责人B", "未开始", "计划今日处理"],
+            ["3", "结果交付", "负责人C", "未开始", "完成后统一归档"],
         ]
-        return self.add_generation_advice_rows(rows)
+        return self.add_support_rows(rows)
 
-    def add_generation_advice_rows(self, rows):
+    def add_support_rows(self, rows):
         table_type = self.extract_table_type(rows)
 
         rows.extend([[], ["表格使用说明", "内容"]])
@@ -103,10 +106,8 @@ class ExcelAgent:
         rows.extend([[], ["质量检查清单", "检查要求"]])
         rows.extend(self.build_quality_check_rows(table_type))
 
-        model_advice = self.build_model_advice(rows)
-        rows.extend([[], ["字段完善方向", "说明"]])
-        for advice in model_advice:
-            rows.append(["方向", advice])
+        rows.extend([[], ["字段说明", "内容"]])
+        rows.extend(self.build_field_note_rows(table_type))
 
         return rows
 
@@ -119,8 +120,8 @@ class ExcelAgent:
     def build_usage_rows(self, table_type):
         return [
             ["使用说明", f"这是一份{table_type}，用于记录和整理当前办公数据。"],
-            ["使用说明", "填写完成后，优先检查空值、重复值和异常数值。"],
-            ["使用说明", "如果要继续做分析，可以基于推荐图表生成看板或汇报材料。"],
+            ["使用说明", "表格已经包含可直接查看的业务记录和辅助说明。"],
+            ["使用说明", "后续分析可以基于推荐图表生成看板或汇报材料。"],
         ]
 
     def build_data_rule_rows(self, table_type):
@@ -180,41 +181,61 @@ class ExcelAgent:
 
     def build_quality_check_rows(self, table_type):
         return [
-            ["检查", "原始需求是否保留。"],
+            ["检查", "表格主题是否清晰。"],
             ["检查", f"{table_type} 的表头是否和实际业务一致。"],
             ["检查", "关键业务数据是否已经补充完整。"],
             ["检查", "关键字段是否存在空值、重复值或格式混乱。"],
             ["检查", "推荐图表是否能支撑最终要表达的结论。"],
         ]
 
-    def build_model_advice(self, rows):
-        user_task = self.extract_original_task(rows)
-        prompt = (
-            "请为下面的 Excel 办公表格生成 3 条字段完善方向。"
-            "要求：只输出 3 行，每行一条方向，不要输出长篇解释。\n\n"
-            f"用户需求：{user_task}"
-        )
-        generation = self.model_router.generate("excel", prompt)
-        result = generation.get("result", "")
+    def build_field_note_rows(self, table_type):
+        if table_type == "客户信息表":
+            return [
+                ["字段说明", "客户名称用于识别客户主体。"],
+                ["字段说明", "跟进状态用于区分待跟进、跟进中、已成交和已流失。"],
+                ["字段说明", "备注用于记录沟通结果和下一次行动。"],
+            ]
 
-        fallback_advice = self.build_fallback_model_advice()
-        if is_unusable_model_result(result):
-            return fallback_advice
+        if table_type == "销售报表":
+            return [
+                ["字段说明", "销售额、成本和利润均使用数字记录。"],
+                ["字段说明", "利润等于销售额减成本。"],
+                ["字段说明", "备注用于记录利润率或异常原因。"],
+            ]
 
-        return split_advice_lines(result, fallback_advice)
+        if table_type == "数据统计表":
+            return [
+                ["字段说明", "项目列记录统计对象。"],
+                ["字段说明", "数值列记录可计算的数据。"],
+                ["字段说明", "备注列解释数据口径和业务含义。"],
+            ]
 
-    def build_fallback_model_advice(self):
         return [
-            "保留原始需求，方便后续追溯。",
-            "表头字段要稳定，避免一列混合多种含义。",
-            "增加备注列，用于记录不确定信息。",
+            ["字段说明", "事项列记录具体任务。"],
+            ["字段说明", "负责人列记录主要执行人。"],
+            ["字段说明", "状态列用于跟踪未开始、进行中和已完成。"],
         ]
 
-    def extract_original_task(self, rows):
-        for row in rows:
-            if len(row) >= 2 and row[0] == "原始需求":
-                return row[1]
-        return "未识别原始需求"
+    def extract_table_topic(self, user_task):
+        cleaned_topic = user_task
+        removable_words = [
+            "帮我",
+            "生成",
+            "整理",
+            "做一份",
+            "写一份",
+            "Excel 表格",
+            "excel 表格",
+            "Excel",
+            "excel",
+            "表格",
+        ]
+
+        for word in removable_words:
+            cleaned_topic = cleaned_topic.replace(word, "")
+
+        cleaned_topic = cleaned_topic.strip(" ：:，。")
+        return cleaned_topic or "办公数据"
 
     def detect_table_type(self, user_task):
         if "客户" in user_task:
