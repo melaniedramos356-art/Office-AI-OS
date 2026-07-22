@@ -256,3 +256,15 @@ python test_ai_butler_agent.py
 memory/production_techniques.md
 materials/shared/
 ```
+
+## v0.6 File Reader Agent
+
+File Reader Agent 可以读取用户提供的 `.docx`、`.pptx`、`.xlsx`、`.md`、`.txt`、`.csv` 文件，并输出内容预览和下一步处理建议。
+
+它是后续“参考原文件进行文案修改、版面设计、图片建议和数据分析”的前置能力。
+
+测试命令：
+
+```bash
+python test_file_reader_agent.py
+```

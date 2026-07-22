@@ -1,6 +1,7 @@
 from agents.ai_butler_agent import AIButlerAgent
 from agents.browser_agent import BrowserAgent
 from agents.excel_agent import ExcelAgent
+from agents.file_reader_agent import FileReaderAgent
 from agents.learning_agent import LearningAgent
 from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
@@ -12,6 +13,7 @@ class ChiefCoordinator:
     def __init__(self):
         self.ai_butler_agent = AIButlerAgent()
         self.browser_agent = BrowserAgent()
+        self.file_reader_agent = FileReaderAgent()
         self.learning_agent = LearningAgent()
         self.word_agent = WordAgent()
         self.excel_agent = ExcelAgent()
@@ -29,6 +31,10 @@ class ChiefCoordinator:
 
         agent = self.choose_agent(cleaned_task)
         task_result = agent.handle(cleaned_task)
+
+        if agent == self.file_reader_agent:
+            return f"{task_result}\n\nQA Agent 质量检查结果：跳过，文件读取任务不检查原文件是否包含读取指令。"
+
         qa_result = self.qa_agent.check_task_result(task_result, cleaned_task)
 
         return f"{task_result}\n\n{qa_result}"
@@ -43,9 +49,13 @@ class ChiefCoordinator:
         browser_keywords = ["浏览器", "网页", "网站", "打开", "链接", "网址", "url", "browser"]
         learning_keywords = ["学习素材", "素材库", "优秀素材", "技巧库", "经验库", "learning"]
         butler_keywords = ["管家", "规划", "复杂任务", "修改已有文件", "参考原文件"]
+        file_reader_keywords = ["读取文件", "分析文件", "检查文件", ".docx", ".pptx", ".xlsx"]
 
         if self.has_keyword(task_text, butler_keywords):
             return self.ai_butler_agent
+
+        if self.has_keyword(task_text, file_reader_keywords):
+            return self.file_reader_agent
 
         if self.has_keyword(task_text, learning_keywords):
             return self.learning_agent
