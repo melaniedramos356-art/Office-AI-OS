@@ -35,12 +35,15 @@ class LearningAgent:
         materials = self.collect_materials()
         learned_content = self.build_learned_content(user_task, materials)
         index_content = self.build_index_content(user_task, materials)
+        advice_content = self.build_generation_advice_content(user_task, materials)
 
         learned_path = self.memory_folder / "learned_techniques.md"
         index_path = self.memory_folder / "material_index.md"
+        advice_path = self.memory_folder / "generation_advice.md"
 
         learned_path.write_text(learned_content, encoding="utf-8")
         index_path.write_text(index_content, encoding="utf-8")
+        advice_path.write_text(advice_content, encoding="utf-8")
 
         return learned_path, index_path, len(materials)
 
@@ -224,6 +227,95 @@ class LearningAgent:
             lines.append("| 暂无 | 暂无素材 | 请添加素材 | 0 | 暂无 |")
 
         return "\n".join(lines) + "\n"
+
+    def build_generation_advice_content(self, user_task, materials):
+        time_text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        material_sections = self.unique_items([material["section"] for material in materials])
+        all_sections = self.unique_items(material_sections + ["word", "excel", "ppt", "research", "browser"])
+
+        blocks = []
+        for section_name in all_sections:
+            blocks.append(self.build_generation_advice_block(section_name, materials))
+
+        return (
+            "# 生成建议与图片搜索计划\n\n"
+            f"## 原始需求\n\n{user_task}\n\n"
+            f"## 更新时间\n\n{time_text}\n\n"
+            "## 使用方式\n\n"
+            "- 生成前先读取对应板块建议。\n"
+            "- 素材库为空时使用内置建议；素材库有内容时叠加学习结果。\n"
+            "- 图片只先生成搜索关键词和使用建议，不自动下载，避免版权和来源风险。\n\n"
+            f"{chr(10).join(blocks)}\n"
+        )
+
+    def build_generation_advice_block(self, section_name, materials):
+        section_materials = [material for material in materials if material["section"] == section_name]
+        learned_keywords = []
+        learned_headings = []
+
+        for material in section_materials:
+            learned_keywords.extend(material["keywords"])
+            learned_headings.extend(material["headings"])
+
+        default_advice = self.build_default_generation_advice(section_name)
+        image_keywords = self.build_image_search_keywords(section_name, learned_keywords)
+        headings_text = "、".join(self.unique_items(learned_headings)[:8]) or "暂无素材结构，先使用内置结构"
+        advice_text = "\n".join([f"- {item}" for item in default_advice])
+        image_text = "\n".join([f"- {keyword}" for keyword in image_keywords])
+
+        return (
+            f"## {section_name} 生成建议\n\n"
+            f"- 可参考结构：{headings_text}\n"
+            f"{advice_text}\n\n"
+            f"## {section_name} 图片搜索建议\n\n"
+            f"{image_text}\n"
+        )
+
+    def build_default_generation_advice(self, section_name):
+        advice_map = {
+            "word": [
+                "正文按背景、目标、重点内容、下一步计划组织。",
+                "标题要短，段落要清楚，避免堆长句。",
+                "图片适合放流程图、结果截图或业务场景图。",
+            ],
+            "excel": [
+                "表头字段要稳定，数据区和备注区分开。",
+                "第一行写表格类型，第二行保留原始需求，方便追溯。",
+                "图片适合用作图标、看板截图或数据来源截图。",
+            ],
+            "ppt": [
+                "每页只讲一个重点，控制在 3 到 5 条内容。",
+                "先讲背景，再讲核心内容，最后给下一步计划。",
+                "图片适合用真实场景图、产品界面图、流程图或数据图。",
+            ],
+            "research": [
+                "先写调研目标，再写关键词、来源和结论记录表。",
+                "资料必须记录来源和可信度。",
+                "图片适合用官网截图、产品对比图或公开图表。",
+            ],
+            "browser": [
+                "先写最短操作路径，再写异常处理。",
+                "遇到登录、超时、下载失败时先记录，不继续猜测。",
+                "图片适合用页面截图，并记录页面链接。",
+            ],
+        }
+
+        return advice_map.get(section_name, ["先明确目标，再组织内容。", "结构清晰优先于复杂样式。"])
+
+    def build_image_search_keywords(self, section_name, learned_keywords):
+        base_keywords = {
+            "word": ["办公报告 配图", "业务流程图", "项目成果 截图"],
+            "excel": ["数据看板 截图", "表格模板 图标", "数据统计 图表"],
+            "ppt": ["商务汇报 背景图", "项目汇报 流程图", "数据分析 可视化图"],
+            "research": ["行业报告 图表", "竞品分析 截图", "产品官网 界面图"],
+            "browser": ["网页截图 示例", "网站操作流程图", "浏览器页面截图"],
+        }
+
+        keywords = base_keywords.get(section_name, ["办公素材 图片", "流程图", "示例截图"])
+        for keyword in self.unique_items(learned_keywords)[:3]:
+            keywords.append(f"{keyword} 配图")
+
+        return keywords[:6]
 
     def unique_items(self, items):
         unique_result = []

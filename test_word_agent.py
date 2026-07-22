@@ -37,6 +37,9 @@ def main():
     if "项目阶段总结报告" not in document_content:
         raise AssertionError("文档内容没有写入原始需求。")
 
+    if "素材库生成建议" not in document_content:
+        raise AssertionError("Word 文档没有写入素材库生成建议。")
+
     print(f"测试通过：Word Agent 已生成文件 {document_path}")
 
 

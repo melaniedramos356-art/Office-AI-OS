@@ -157,4 +157,7 @@ python test_learning_agent.py
 ```text
 memory/learned_techniques.md
 memory/material_index.md
+memory/generation_advice.md
 ```
+
+Word / Excel / PPT Agent 会读取 `memory/generation_advice.md`，把素材库技巧和图片搜索建议写入生成文件。

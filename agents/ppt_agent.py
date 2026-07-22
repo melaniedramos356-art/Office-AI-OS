@@ -3,10 +3,13 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.technique_library import TechniqueLibrary
+
 
 class PPTAgent:
     def __init__(self, output_folder="outputs/ppt_files"):
         self.output_folder = Path(output_folder)
+        self.technique_library = TechniqueLibrary()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -43,12 +46,20 @@ class PPTAgent:
         presentation_type = self.detect_presentation_type(user_task)
         slides = self.build_slides(presentation_type)
 
-        return [
+        slide_data = [
             {
                 "title": f"{presentation_type}",
                 "bullets": [user_task, "自动生成的演示稿草稿", "后续可继续补充真实数据和图片"],
             }
         ] + slides
+
+        slide_data.append(
+            {
+                "title": "素材库生成建议",
+                "bullets": self.technique_library.get_advice("ppt"),
+            }
+        )
+        return slide_data
 
     def detect_presentation_type(self, user_task):
         if "销售" in user_task or "营收" in user_task or "收入" in user_task:

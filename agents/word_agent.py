@@ -3,10 +3,13 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.technique_library import TechniqueLibrary
+
 
 class WordAgent:
     def __init__(self, output_folder="outputs/word_documents"):
         self.output_folder = Path(output_folder)
+        self.technique_library = TechniqueLibrary()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -57,6 +60,8 @@ class WordAgent:
 
         paragraphs.extend(
             [
+                ("heading", "素材库生成建议"),
+                *[("bullet", advice) for advice in self.technique_library.get_advice("word")],
                 ("heading", "待确认事项"),
                 ("bullet", "请补充具体数据、时间、人员或业务背景。"),
                 ("bullet", "请检查是否需要继续完善为正式可交付版本。"),

@@ -38,6 +38,9 @@ def main():
     if "客户数据" not in table_content:
         raise AssertionError("表格内容没有写入原始需求。")
 
+    if "素材库生成建议" not in table_content:
+        raise AssertionError("Excel 表格没有写入素材库生成建议。")
+
     print(f"测试通过：Excel Agent 已生成文件 {table_path}")
 
 

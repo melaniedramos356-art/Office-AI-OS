@@ -3,10 +3,13 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.technique_library import TechniqueLibrary
+
 
 class ExcelAgent:
     def __init__(self, output_folder="outputs/excel_files"):
         self.output_folder = Path(output_folder)
+        self.technique_library = TechniqueLibrary()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -43,7 +46,7 @@ class ExcelAgent:
         table_type = self.detect_table_type(user_task)
 
         if table_type == "数据统计表":
-            return [
+            rows = [
                 ["表格类型", "数据统计表"],
                 ["原始需求", user_task],
                 [],
@@ -52,9 +55,10 @@ class ExcelAgent:
                 ["示例项目B", "0", "请替换为真实数据"],
                 ["合计", "0", "请填写计算结果"],
             ]
+            return self.add_generation_advice_rows(rows)
 
         if table_type == "客户信息表":
-            return [
+            rows = [
                 ["表格类型", "客户信息表"],
                 ["原始需求", user_task],
                 [],
@@ -62,23 +66,32 @@ class ExcelAgent:
                 ["示例客户A", "", "", "待跟进", "请替换为真实客户"],
                 ["示例客户B", "", "", "待跟进", "请替换为真实客户"],
             ]
+            return self.add_generation_advice_rows(rows)
 
         if table_type == "销售报表":
-            return [
+            rows = [
                 ["表格类型", "销售报表"],
                 ["原始需求", user_task],
                 [],
                 ["日期", "产品", "销售额", "成本", "利润", "备注"],
                 ["2026-07-22", "示例产品", "0", "0", "0", "请替换为真实数据"],
             ]
+            return self.add_generation_advice_rows(rows)
 
-        return [
+        rows = [
             ["表格类型", "通用表格"],
             ["原始需求", user_task],
             [],
             ["序号", "事项", "负责人", "状态", "备注"],
             ["1", "示例事项", "", "未开始", "请替换为真实内容"],
         ]
+        return self.add_generation_advice_rows(rows)
+
+    def add_generation_advice_rows(self, rows):
+        rows.extend([[], ["素材库生成建议", "说明"]])
+        for advice in self.technique_library.get_advice("excel"):
+            rows.append(["建议", advice])
+        return rows
 
     def detect_table_type(self, user_task):
         if "客户" in user_task:

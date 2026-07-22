@@ -24,6 +24,7 @@ def test_learning_agent_directly():
 
     learned_path = memory_folder / "learned_techniques.md"
     index_path = memory_folder / "material_index.md"
+    advice_path = memory_folder / "generation_advice.md"
 
     if not learned_path.exists():
         raise AssertionError(f"技巧库文件不存在：{learned_path}")
@@ -31,9 +32,16 @@ def test_learning_agent_directly():
     if not index_path.exists():
         raise AssertionError(f"素材索引文件不存在：{index_path}")
 
+    if not advice_path.exists():
+        raise AssertionError(f"生成建议文件不存在：{advice_path}")
+
     learned_content = learned_path.read_text(encoding="utf-8")
     if "测试报告素材" not in learned_content:
         raise AssertionError("技巧库没有记录测试素材标题。")
+
+    advice_content = advice_path.read_text(encoding="utf-8")
+    if "图片搜索建议" not in advice_content:
+        raise AssertionError("生成建议没有包含图片搜索建议。")
 
     print("测试通过：Learning Agent 可以扫描素材并生成技巧库")
 

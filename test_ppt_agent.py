@@ -38,6 +38,9 @@ def main():
     if "项目阶段汇报" not in presentation_content:
         raise AssertionError("PPT 文件没有写入原始需求。")
 
+    if "素材库生成建议" not in presentation_content:
+        raise AssertionError("PPT 文件没有写入素材库生成建议。")
+
     print(f"测试通过：PPT Agent 已生成文件 {presentation_path}")
 
 
