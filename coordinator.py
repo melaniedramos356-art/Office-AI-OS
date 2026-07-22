@@ -11,6 +11,7 @@ from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
 from agents.reference_imitation_agent import ReferenceImitationAgent
 from agents.research_agent import ResearchAgent
+from agents.web_case_agent import WebCaseAgent
 from agents.word_agent import WordAgent
 
 
@@ -30,6 +31,7 @@ class ChiefCoordinator:
         self.research_agent = ResearchAgent()
         self.qa_agent = QAAgent()
         self.reference_imitation_agent = ReferenceImitationAgent()
+        self.web_case_agent = WebCaseAgent()
 
     def handle_task(self, user_task):
         if not isinstance(user_task, str):
@@ -59,6 +61,7 @@ class ChiefCoordinator:
         browser_keywords = ["浏览器", "网页", "网站", "打开", "链接", "网址", "url", "browser"]
         learning_keywords = ["学习素材", "素材库", "优秀素材", "技巧库", "经验库", "learning"]
         inspiration_keywords = ["找灵感", "灵感计划", "素材灵感", "优秀作品", "参考网站", "图片查找", "素材网站"]
+        web_case_keywords = ["网页优质案例", "网页案例", "搜索优质案例", "案例搜索", "高级排版案例", "语言艺术案例"]
         office_panel_keywords = ["办公板块", "办公首页", "办公功能", "办公模块", "三大办公", "交互页面"]
         butler_keywords = ["管家", "规划", "复杂任务", "修改已有文件", "参考原文件"]
         imitation_keywords = ["仿写", "模仿", "参考生成", "照着", "类似风格"]
@@ -89,6 +92,9 @@ class ChiefCoordinator:
 
         if self.has_keyword(task_text, inspiration_keywords):
             return self.inspiration_agent
+
+        if self.has_keyword(task_text, web_case_keywords):
+            return self.web_case_agent
 
         if self.has_keyword(task_text, browser_keywords):
             return self.browser_agent

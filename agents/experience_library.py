@@ -32,10 +32,33 @@ class ExperienceLibrary:
         self.ensure_exists()
         safe_title = title.strip() if isinstance(title, str) and title.strip() else "未命名经验"
         safe_category = category.strip() if isinstance(category, str) and category.strip() else "程序迭代经验"
-        safe_items = [item for item in items if isinstance(item, str) and item.strip()]
-        item_text = "\n".join([f"- {item}" for item in safe_items]) or "- 暂无详细经验"
+        safe_items = self.unique_items(items)
+        current_content = self.experience_path.read_text(encoding="utf-8")
+        section_title = f"### {safe_category}：{safe_title}"
+        if section_title in current_content:
+            return self.experience_path
+
+        safe_items = [item for item in safe_items if f"- {item}" not in current_content]
+        if not safe_items:
+            return self.experience_path
+
+        item_text = "\n".join([f"- {item}" for item in safe_items])
 
         with self.experience_path.open("a", encoding="utf-8") as file:
-            file.write(f"\n### {safe_category}：{safe_title}\n\n{item_text}\n")
+            file.write(f"\n{section_title}\n\n{item_text}\n")
 
         return self.experience_path
+
+    def unique_items(self, items):
+        unique_results = []
+        seen_items = set()
+        for item in items:
+            if not isinstance(item, str):
+                continue
+            cleaned_item = " ".join(item.strip().split())
+            key = cleaned_item.lower()
+            if not cleaned_item or key in seen_items:
+                continue
+            seen_items.add(key)
+            unique_results.append(cleaned_item)
+        return unique_results

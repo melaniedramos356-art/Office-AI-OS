@@ -443,6 +443,40 @@ python test_inspiration_agent.py
 outputs/inspiration_plans/
 ```
 
+## v0.8 Web Case Agent
+
+Web Case Agent 用来把“网页优质案例搜索”从计划层推进到可执行层。
+
+在 Codex / ChatGPT App 环境中，优先由 Codex 直接搜索网页、筛选案例、提炼技巧，并写入经验库。Web Case Agent 主要作为 Office-AI-OS 本地独立运行时的兜底能力：它会按任务关键词搜索网页结果，提取标题、链接、摘要和可学习制作技巧，并按标题加链接去重。
+
+适合输入：
+
+```text
+请搜索优质案例提升大学生竞选班长 PPT 排版
+请做网页优质案例搜索，提升 Word 发言稿语言艺术
+请搜索 Excel 数据看板案例，提升表格分析表现力
+```
+
+输出内容：
+
+```text
+去重后的网页案例
+可学习制作技巧
+应用到 Word / PPT / Excel 成品生成的方向
+```
+
+同时会把可复用技巧写入：
+
+```text
+memory/experience_library.md
+```
+
+测试命令：
+
+```bash
+python test_web_case_agent.py
+```
+
 ## v0.9 Office Panel Agent
 
 Office Panel Agent 是后续桌面 App 办公首页的后端雏形，用来输出办公功能卡片、按钮建议和每个按钮对应的命令。

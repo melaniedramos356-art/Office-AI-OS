@@ -37,7 +37,7 @@ class AIButlerAgent:
             steps.append("- File Reader Agent 读取参考文件，只提取结构、版式、文案风格和数据表达。")
 
         if self.needs_web_inspiration(user_task):
-            steps.append("- Browser / Inspiration Agent 查找优质案例和制作技巧，搜索词、网站和结果先去重。")
+            steps.append("- Codex 优先搜索网页优质案例并筛选技巧；本地运行时由 Web Case Agent 兜底，搜索词、网站和结果先去重。")
 
         steps.append("- Learning Agent 把可复用技巧写入 memory，已有技巧不重复写入。")
         steps.append(self.build_model_step(user_task))
