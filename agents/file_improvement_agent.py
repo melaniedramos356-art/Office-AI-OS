@@ -3,7 +3,9 @@ from agents.file_reader_agent import FileReaderAgent
 from agents.inspiration_library import InspirationLibrary
 from agents.production_technique_library import ProductionTechniqueLibrary
 from agents.qa_agent import QAAgent
+from agents.ppt_agent import PPTAgent
 from agents.word_agent import WordAgent
+from agents.excel_agent import ExcelAgent
 
 
 class FileImprovementAgent:
@@ -13,7 +15,9 @@ class FileImprovementAgent:
         self.data_analysis_inspiration_library = DataAnalysisInspirationLibrary()
         self.production_technique_library = ProductionTechniqueLibrary()
         self.qa_agent = QAAgent()
+        self.ppt_agent = PPTAgent(output_folder="outputs/improved_ppt_files")
         self.word_agent = WordAgent(output_folder="outputs/improved_word_documents")
+        self.excel_agent = ExcelAgent(output_folder="outputs/improved_excel_files")
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -147,10 +151,7 @@ class FileImprovementAgent:
 
         file_path = self.file_reader_agent.extract_file_path(user_task)
         if not file_path:
-            return "File Improvement Agent 没有找到 Word 文件路径。"
-
-        if file_path.suffix.lower() != ".docx":
-            return "File Improvement Agent 当前只支持生成 Word 改进版文件。"
+            return "File Improvement Agent 没有找到文件路径。"
 
         if not file_path.exists():
             return f"File Improvement Agent 没有找到文件：{file_path}"
@@ -160,6 +161,15 @@ class FileImprovementAgent:
         except OSError as error:
             return f"File Improvement Agent 读取文件失败：{error}"
 
+        if file_path.suffix.lower() == ".pptx":
+            return self.create_improved_ppt_file(user_task, file_path, file_content)
+
+        if file_path.suffix.lower() == ".xlsx":
+            return self.create_improved_excel_file(user_task, file_path, file_content)
+
+        if file_path.suffix.lower() != ".docx":
+            return "File Improvement Agent 当前只支持生成 Word、PPT、Excel 改进版文件。"
+
         paragraphs = self.build_improved_word_paragraphs(file_path, file_content)
         output_path = self.word_agent.output_folder / self.word_agent.build_file_name()
         self.word_agent.output_folder.mkdir(parents=True, exist_ok=True)
@@ -167,6 +177,32 @@ class FileImprovementAgent:
 
         return (
             "File Improvement Agent 已生成 Word 改进版文件。\n"
+            f"任务内容：{user_task.strip()}\n"
+            f"原文件位置：{file_path}\n"
+            f"文件位置：{output_path}"
+        )
+
+    def create_improved_ppt_file(self, user_task, file_path, file_content):
+        slides = self.build_improved_ppt_slides(file_path, file_content)
+        output_path = self.ppt_agent.output_folder / self.ppt_agent.build_file_name()
+        self.ppt_agent.output_folder.mkdir(parents=True, exist_ok=True)
+        self.ppt_agent.write_pptx(output_path, slides)
+
+        return (
+            "File Improvement Agent 已生成 PPT 改进版文件。\n"
+            f"任务内容：{user_task.strip()}\n"
+            f"原文件位置：{file_path}\n"
+            f"文件位置：{output_path}"
+        )
+
+    def create_improved_excel_file(self, user_task, file_path, file_content):
+        rows = self.build_improved_excel_rows(file_path, file_content)
+        output_path = self.excel_agent.output_folder / self.excel_agent.build_file_name()
+        self.excel_agent.output_folder.mkdir(parents=True, exist_ok=True)
+        self.excel_agent.write_xlsx(output_path, rows)
+
+        return (
+            "File Improvement Agent 已生成 Excel 改进版文件。\n"
             f"任务内容：{user_task.strip()}\n"
             f"原文件位置：{file_path}\n"
             f"文件位置：{output_path}"
@@ -217,3 +253,117 @@ class FileImprovementAgent:
         )
 
         return paragraphs
+
+    def build_improved_ppt_slides(self, file_path, file_content):
+        original_lines = [line.strip() for line in file_content.splitlines() if line.strip()]
+        preview_lines = original_lines[:5]
+
+        return [
+            {
+                "title": "PPT 改进版",
+                "bullets": [
+                    f"原文件：{file_path}",
+                    "目标：优化页面结构、版面层级、文案表达和图片素材建议",
+                    "说明：本文件不会覆盖原 PPT",
+                ],
+            },
+            {
+                "title": "原文件内容摘录",
+                "bullets": preview_lines or ["原文件没有读取到有效文本"],
+            },
+            {
+                "title": "页面结构优化",
+                "bullets": [
+                    "用目录页明确整体叙事顺序",
+                    "每页只保留一个核心观点",
+                    "把长句改成 3 条以内的短要点",
+                ],
+            },
+            {
+                "title": "结论式标题建议",
+                "bullets": [
+                    "标题直接表达本页结论",
+                    "避免只写背景、问题、方案这类空标题",
+                    "关键页优先突出数据、变化或行动",
+                ],
+            },
+            {
+                "title": "版面设计建议",
+                "bullets": [
+                    "保持标题、正文、备注区域对齐",
+                    "每页预留图片或图表区域",
+                    "同类页面使用一致的字号和布局",
+                ],
+            },
+            {
+                "title": "图片素材建议",
+                "bullets": self.build_ppt_source_bullets(str(file_path)),
+            },
+        ]
+
+    def build_ppt_source_bullets(self, user_task):
+        source_lines = self.inspiration_library.build_source_lines(user_task, limit=4)
+        bullets = [source_line.replace("- ", "", 1) for source_line in source_lines]
+        bullets.extend(
+            [
+                "搜索词：商务汇报 版式 灵感",
+                "搜索词：项目汇报 流程图 数据可视化",
+            ]
+        )
+        return bullets
+
+    def build_improved_excel_rows(self, file_path, file_content):
+        original_lines = [line.strip() for line in file_content.splitlines() if line.strip()]
+        preview_lines = original_lines[:8]
+
+        rows = [
+            ["Excel 改进版", ""],
+            ["原文件位置", str(file_path)],
+            ["改进目标", "优化字段结构、数据规则、分析图表和质量检查"],
+            [],
+            ["原数据摘录", "内容"],
+        ]
+
+        if preview_lines:
+            for index, line in enumerate(preview_lines, start=1):
+                rows.append([f"摘录 {index}", line[:160]])
+        else:
+            rows.append(["摘录", "原文件没有读取到有效文本"])
+
+        rows.extend(
+            [
+                [],
+                ["字段检查", "建议"],
+                ["字段检查", "确认表头是否稳定，避免一列混合多种含义。"],
+                ["字段检查", "日期、金额、状态等字段要保持统一格式。"],
+                ["字段检查", "不确定信息放入备注列，不要污染主要数据列。"],
+                [],
+                ["数据填写规则", "说明"],
+                ["规则", "先替换示例数据，再补充真实业务信息。"],
+                ["规则", "检查空值、重复值、异常值和格式混乱。"],
+                ["规则", "保留原始需求和数据来源，方便后续追溯。"],
+                [],
+                ["推荐分析图表", "适用场景"],
+                ["折线图", "适合查看趋势变化。"],
+                ["柱状图", "适合对比不同分类或对象。"],
+                ["饼图", "适合查看占比结构。"],
+                ["排行榜", "适合找出贡献最高或最低的项目。"],
+                [],
+                ["数据分析网站灵感库", "类型", "用途", "链接"],
+            ]
+        )
+
+        rows.extend(self.data_analysis_inspiration_library.build_source_rows(str(file_path), limit=6))
+
+        rows.extend(
+            [
+                [],
+                ["质量检查清单", "检查要求"],
+                ["检查", "原数据是否已经保留。"],
+                ["检查", "关键字段是否存在空值或重复。"],
+                ["检查", "推荐图表是否能支撑最终结论。"],
+                ["检查", "是否需要继续生成正式分析看板。"],
+            ]
+        )
+
+        return rows
