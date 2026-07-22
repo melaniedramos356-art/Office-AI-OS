@@ -1,5 +1,6 @@
 import os
 
+from agents.model_advice_utils import is_unusable_model_result
 from models.mock_model_client import MockModelClient
 from models.model_config import MODEL_CONFIG, PROVIDER_CONFIG
 from models.providers.deepseek_client import DeepSeekClient
@@ -48,14 +49,55 @@ class ModelRouter:
 
     def generate(self, task_type, prompt):
         route_info = self.route(task_type)
-        provider_name = route_info["provider"]
-        model_client = self.provider_clients.get(provider_name, self.model_client)
-        model_result = model_client.generate(task_type, prompt)
+        provider_order = self.build_generation_provider_order(route_info)
+        attempts = []
+
+        for provider_name in provider_order:
+            model_client = self.provider_clients.get(provider_name)
+            if not model_client:
+                continue
+
+            model_result = model_client.generate(task_type, prompt)
+            is_usable_result = not is_unusable_model_result(model_result)
+            attempts.append({"provider": provider_name, "usable": is_usable_result})
+            selected_route = self.build_route_for_provider(route_info, provider_name)
+
+            if provider_name == "local" or is_usable_result:
+                return {
+                    "route": selected_route,
+                    "result": model_result,
+                    "attempts": attempts,
+                }
 
         return {
-            "route": route_info,
-            "result": model_result,
+            "route": self.build_fallback_route(route_info.get("task_type", task_type)),
+            "result": self.model_client.generate(task_type, prompt),
+            "attempts": attempts,
         }
+
+    def build_generation_provider_order(self, route_info):
+        provider_order = []
+        for provider_name in [route_info.get("provider")] + route_info.get("fallback_providers", []):
+            if provider_name and provider_name not in provider_order:
+                provider_order.append(provider_name)
+
+        if "local" not in provider_order:
+            provider_order.append("local")
+
+        return provider_order
+
+    def build_route_for_provider(self, base_route, provider_name):
+        provider_config = PROVIDER_CONFIG.get(provider_name, PROVIDER_CONFIG["local"])
+        route_info = dict(base_route)
+        route_info.update(
+            {
+                "provider": provider_name,
+                "provider_display_name": provider_config.get("display_name", provider_name),
+                "api_key_env": provider_config.get("api_key_env", ""),
+                "status": provider_config.get("status", "reserved"),
+            }
+        )
+        return route_info
 
     def choose_available_provider(self, providers):
         for provider_name in providers:

@@ -1,6 +1,30 @@
 from models.model_router import ModelRouter
 
 
+class AvailableFailingClient:
+    def is_available(self):
+        return True
+
+    def generate(self, task_type, prompt):
+        return "DeepSeek 调用失败：模拟错误"
+
+
+class AvailableSuccessClient:
+    def is_available(self):
+        return True
+
+    def generate(self, task_type, prompt):
+        return "{\"title\":\"可用模型结果\"}"
+
+
+class UnavailableClient:
+    def is_available(self):
+        return False
+
+    def generate(self, task_type, prompt):
+        return "不应该调用"
+
+
 def run_route_test(task_type, allowed_providers):
     router = ModelRouter()
     route_info = router.route(task_type)
@@ -27,16 +51,53 @@ def test_mock_generation():
 
 
 def test_deepseek_route_generation():
-    router = ModelRouter()
+    router = ModelRouter(use_real_models=True)
+    router.provider_clients["deepseek"] = AvailableSuccessClient()
+    router.provider_clients["kimi"] = UnavailableClient()
+    router.provider_clients["openai"] = UnavailableClient()
     generation = router.generate("excel", "帮我规划客户数据表字段")
 
-    if generation["route"]["provider"] not in ["deepseek", "local"]:
-        raise AssertionError("Excel 任务没有路由到 DeepSeek 或本地兜底模型。")
+    if generation["route"]["provider"] != "deepseek":
+        raise AssertionError("Excel 任务没有路由到模拟 DeepSeek。")
 
     if not generation["result"].strip():
-        raise AssertionError("DeepSeek 或回退模型返回为空。")
+        raise AssertionError("模拟 DeepSeek 返回为空。")
 
-    print("测试通过：Model Router 可以处理 DeepSeek 路由")
+    print("测试通过：Model Router 可以处理 DeepSeek 路由，不触发真实 API")
+
+
+def test_model_router_falls_back_after_provider_failure():
+    router = ModelRouter(use_real_models=True)
+    router.provider_clients["deepseek"] = AvailableFailingClient()
+    router.provider_clients["openai"] = AvailableSuccessClient()
+    router.provider_clients["kimi"] = UnavailableClient()
+
+    generation = router.generate("excel", "帮我生成客户数据表")
+
+    if generation["route"]["provider"] != "openai":
+        raise AssertionError(f"DeepSeek 失败后没有切换到 OpenAI：{generation}")
+
+    if len(generation.get("attempts", [])) < 2:
+        raise AssertionError(f"模型尝试记录不完整：{generation}")
+
+    print("测试通过：Model Router 会在模型失败后自动降级到下一个可用模型")
+
+
+def test_model_router_returns_local_after_all_real_providers_fail():
+    router = ModelRouter(use_real_models=True)
+    router.provider_clients["deepseek"] = AvailableFailingClient()
+    router.provider_clients["openai"] = AvailableFailingClient()
+    router.provider_clients["kimi"] = AvailableFailingClient()
+
+    generation = router.generate("word", "帮我写一份文档")
+
+    if generation["route"]["provider"] != "local":
+        raise AssertionError(f"真实模型都失败后没有回到本地模型：{generation}")
+
+    if "Mock 模型已生成占位结果" not in generation["result"]:
+        raise AssertionError(f"本地兜底结果异常：{generation}")
+
+    print("测试通过：Model Router 会在真实模型全部失败后回到本地兜底")
 
 
 def main():
@@ -50,6 +111,8 @@ def main():
     run_route_test("image", ["local"])
     test_mock_generation()
     test_deepseek_route_generation()
+    test_model_router_falls_back_after_provider_failure()
+    test_model_router_returns_local_after_all_real_providers_fail()
 
 
 if __name__ == "__main__":
