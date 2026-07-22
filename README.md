@@ -391,3 +391,38 @@ python test_inspiration_agent.py
 ```text
 outputs/inspiration_plans/
 ```
+
+## v0.9 Office Panel Agent
+
+Office Panel Agent 是后续桌面 App 办公首页的后端雏形，用来输出办公功能卡片、按钮建议和每个按钮对应的命令。
+
+当前办公板块包含：
+
+```text
+Word 文档生成
+PPT 演示生成
+Excel 表格生成
+已有文件改进
+素材灵感计划
+质量检查
+```
+
+适合输入：
+
+```text
+请完善办公板块，准备做桌面 App 交互页面
+显示办公首页功能
+整理三大办公功能
+```
+
+测试命令：
+
+```bash
+python test_office_panel_agent.py
+```
+
+生成文件位置：
+
+```text
+outputs/office_panels/
+```

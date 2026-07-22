@@ -26,7 +26,16 @@ def test_inspiration_agent_directly():
         raise AssertionError(f"文件不存在：{plan_path}")
 
     plan_content = plan_path.read_text(encoding="utf-8")
-    required_texts = ["优先查找网站", "建议搜索词", "可复用制作技巧", "站酷", "Behance"]
+    required_texts = [
+        "优先查找网站",
+        "建议搜索词",
+        "可复用制作技巧",
+        "图片生成提示词",
+        "版面参考重点",
+        "交给 PPT Agent",
+        "站酷",
+        "Behance",
+    ]
     for text in required_texts:
         if text not in plan_content:
             raise AssertionError(f"素材灵感计划缺少内容：{text}")
@@ -47,9 +56,34 @@ def test_coordinator_routes_inspiration_task():
     print("测试通过：Coordinator 可以分配素材灵感任务")
 
 
+def test_excel_inspiration_plan():
+    test_output_folder = "outputs/test_inspiration_plans"
+    agent = InspirationAgent(output_folder=test_output_folder)
+    result = agent.handle("帮我找 Excel 数据分析看板参考")
+
+    file_line = ""
+    for line in result.splitlines():
+        if line.startswith("文件位置："):
+            file_line = line
+            break
+
+    if not file_line:
+        raise AssertionError(f"Excel 素材灵感计划没有文件位置：{result}")
+
+    plan_path = Path(file_line.replace("文件位置：", "", 1))
+    plan_content = plan_path.read_text(encoding="utf-8")
+    required_texts = ["数据分析看板", "图表选择", "交给 Excel Agent"]
+    for text in required_texts:
+        if text not in plan_content:
+            raise AssertionError(f"Excel 素材灵感计划缺少内容：{text}")
+
+    print("测试通过：Inspiration Agent 可以生成 Excel 数据分析灵感计划")
+
+
 def main():
     test_inspiration_agent_directly()
     test_coordinator_routes_inspiration_task()
+    test_excel_inspiration_plan()
 
 
 if __name__ == "__main__":
