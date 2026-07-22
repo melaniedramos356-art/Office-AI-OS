@@ -503,6 +503,26 @@ Excel：优先读取 excel 制作技巧，再补充 shared 和 china 技巧
 python test_generation_quality_guide.py
 ```
 
+## v0.8.2 Local Fallback Quality
+
+Local Fallback Quality 用来提升没有真实 AI 模型时的本地生成质量。
+
+当前增强点：
+
+```text
+Word：新增大学生竞选班长发言稿成品结构，报告/总结内容更完整
+PPT：项目汇报和通用演示稿使用更清晰的结论式页面标题
+Excel：新增分析结论区，让表格更像可直接汇报的数据文件
+```
+
+测试命令：
+
+```bash
+python test_word_agent.py
+python test_ppt_agent.py
+python test_excel_agent.py
+```
+
 ## v0.9 Office Panel Agent
 
 Office Panel Agent 是后续桌面 App 办公首页的后端雏形，用来输出办公功能卡片、按钮建议和每个按钮对应的命令。

@@ -162,6 +162,9 @@ class ExcelAgent:
     def add_support_rows(self, rows):
         table_type = self.extract_table_type(rows)
 
+        rows.extend([[], ["分析结论", "内容"]])
+        rows.extend(self.build_analysis_summary_rows(table_type))
+
         rows.extend([[], ["表格使用说明", "内容"]])
         rows.extend(self.build_usage_rows(table_type))
 
@@ -184,6 +187,34 @@ class ExcelAgent:
             if len(row) >= 2 and row[0] == "表格类型":
                 return row[1]
         return "通用表格"
+
+    def build_analysis_summary_rows(self, table_type):
+        if table_type == "客户信息表":
+            return [
+                ["结论", "客户管理重点应放在跟进中和待跟进客户，优先明确下一次沟通动作。"],
+                ["结论", "已成交客户需要沉淀合作信息，后续可用于复购、转介绍或案例整理。"],
+                ["结论", "备注列应记录客户真实需求和沟通结果，方便后续形成销售判断。"],
+            ]
+
+        if table_type == "销售报表":
+            return [
+                ["结论", "销售分析应同时关注收入、成本和利润，不能只看销售额。"],
+                ["结论", "利润贡献较高的产品应优先复盘成交原因，用于下一阶段资源投入。"],
+                ["结论", "异常波动需要单独标注原因，便于后续汇报和经营判断。"],
+            ]
+
+        if table_type == "数据统计表":
+            return [
+                ["结论", "数据统计应先看核心指标，再看阶段成果和风险事项。"],
+                ["结论", "合计值用于快速判断总体规模，明细值用于定位具体问题。"],
+                ["结论", "风险事项需要持续跟踪，避免只统计数量而缺少处理动作。"],
+            ]
+
+        return [
+            ["结论", "当前表格适合用于整理任务、责任人、状态和后续跟进事项。"],
+            ["结论", "后续分析应优先关注未完成事项、责任分布和推进节奏。"],
+            ["结论", "备注列用于补充原因、结果和需要协同的内容。"],
+        ]
 
     def build_usage_rows(self, table_type):
         return [

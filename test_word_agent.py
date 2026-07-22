@@ -12,6 +12,7 @@ def main():
     test_word_agent_builds_report()
     test_word_agent_builds_student_summer_safety_script()
     test_word_agent_builds_low_altitude_capital_report()
+    test_word_agent_builds_class_monitor_speech()
 
 
 def test_word_agent_builds_report():
@@ -107,6 +108,32 @@ def test_word_agent_builds_low_altitude_capital_report():
     assert_no_prompt_like_content(document_content)
 
     print(f"测试通过：Word Agent 已生成低空经济研究报告 {document_path}")
+
+
+def test_word_agent_builds_class_monitor_speech():
+    test_output_folder = "outputs/test_word_documents"
+    agent = WordAgent(output_folder=test_output_folder)
+    result = agent.handle("帮我写一份大学生竞选班长的发言稿")
+    document_path = extract_file_path(result)
+
+    qa_agent = QAAgent()
+    document_content = qa_agent.read_file_content(document_path)
+    required_texts = [
+        "大学生竞选班长发言稿",
+        "开场问候",
+        "竞选理由",
+        "工作设想",
+        "服务承诺",
+        "结尾表态",
+    ]
+
+    for text in required_texts:
+        if text not in document_content:
+            raise AssertionError(f"大学生竞选班长发言稿缺少内容：{text}")
+
+    assert_no_prompt_like_content(document_content)
+
+    print(f"测试通过：Word Agent 已生成大学生竞选班长发言稿 {document_path}")
 
 
 def extract_file_path(task_result):

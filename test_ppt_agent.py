@@ -44,6 +44,9 @@ def main():
     if "目录" not in presentation_content:
         raise AssertionError("PPT 文件没有写入目录页。")
 
+    if "项目已进入可控推进阶段" not in presentation_content:
+        raise AssertionError("PPT 文件没有使用结论式页面标题。")
+
     forbidden_texts = [
         "AI 结构建议",
         "通用制作技巧",

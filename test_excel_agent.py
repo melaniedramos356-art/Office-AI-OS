@@ -44,6 +44,9 @@ def main():
     if "表格使用说明" not in table_content:
         raise AssertionError("Excel 表格没有写入表格使用说明。")
 
+    if "分析结论" not in table_content:
+        raise AssertionError("Excel 表格没有写入分析结论。")
+
     if "数据填写规则" not in table_content:
         raise AssertionError("Excel 表格没有写入数据填写规则。")
 
