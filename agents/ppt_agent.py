@@ -3,6 +3,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from agents.inspiration_library import InspirationLibrary
 from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
 
@@ -10,6 +11,7 @@ from models.model_router import ModelRouter
 class PPTAgent:
     def __init__(self, output_folder="outputs/ppt_files"):
         self.output_folder = Path(output_folder)
+        self.inspiration_library = InspirationLibrary()
         self.technique_library = TechniqueLibrary()
         self.model_router = ModelRouter()
 
@@ -60,6 +62,13 @@ class PPTAgent:
             {
                 "title": "AI 结构建议",
                 "bullets": self.build_model_advice(user_task, presentation_type, slides),
+            }
+        )
+
+        slide_data.append(
+            {
+                "title": "灵感素材查找建议",
+                "bullets": self.build_inspiration_advice(user_task),
             }
         )
 
@@ -126,6 +135,19 @@ class PPTAgent:
                 advice_items.append(cleaned_line)
 
         return advice_items[:3] or self.build_fallback_model_advice()
+
+    def build_inspiration_advice(self, user_task):
+        source_lines = self.inspiration_library.build_source_lines(user_task, limit=5)
+        keyword_lines = self.inspiration_library.build_search_keywords(user_task)[:3]
+        advice = []
+
+        for source_line in source_lines:
+            advice.append(source_line)
+
+        for keyword in keyword_lines:
+            advice.append(f"搜索词：{keyword}")
+
+        return advice
 
     def detect_presentation_type(self, user_task):
         if "销售" in user_task or "营收" in user_task or "收入" in user_task:

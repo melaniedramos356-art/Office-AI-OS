@@ -35,6 +35,12 @@ def test_browser_agent_directly():
     if "预计耗时" not in plan_content:
         raise AssertionError("浏览器操作计划没有包含预计耗时。")
 
+    if "灵感网站快速入口" not in plan_content:
+        raise AssertionError("浏览器操作计划没有包含灵感网站快速入口。")
+
+    if "Pinterest" not in plan_content or "站酷" not in plan_content:
+        raise AssertionError("浏览器操作计划没有写入常用灵感网站。")
+
     print(f"测试通过：Browser Agent 已生成文件 {plan_path}")
 
 

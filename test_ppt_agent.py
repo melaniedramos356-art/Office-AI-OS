@@ -44,6 +44,12 @@ def main():
     if "AI 结构建议" not in presentation_content:
         raise AssertionError("PPT 文件没有写入 AI 结构建议。")
 
+    if "灵感素材查找建议" not in presentation_content:
+        raise AssertionError("PPT 文件没有写入灵感素材查找建议。")
+
+    if "Dribbble" not in presentation_content or "Behance" not in presentation_content:
+        raise AssertionError("PPT 文件没有写入核心灵感网站。")
+
     if "素材库生成建议" not in presentation_content:
         raise AssertionError("PPT 文件没有写入素材库生成建议。")
 

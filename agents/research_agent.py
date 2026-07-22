@@ -1,10 +1,13 @@
 from datetime import datetime
 from pathlib import Path
 
+from agents.inspiration_library import InspirationLibrary
+
 
 class ResearchAgent:
     def __init__(self, output_folder="outputs/research_plans"):
         self.output_folder = Path(output_folder)
+        self.inspiration_library = InspirationLibrary()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -40,9 +43,12 @@ class ResearchAgent:
     def build_plan_content(self, user_task):
         research_type = self.detect_research_type(user_task)
         keywords = self.build_keywords(user_task, research_type)
+        inspiration_keywords = self.inspiration_library.build_search_keywords(user_task)
+        inspiration_table = self.inspiration_library.build_source_table(user_task)
         steps = self.build_steps(research_type)
 
         keyword_text = "\n".join([f"- {keyword}" for keyword in keywords])
+        inspiration_keyword_text = "\n".join([f"- {keyword}" for keyword in inspiration_keywords])
         step_text = "\n".join([f"{index + 1}. {step}" for index, step in enumerate(steps)])
 
         return (
@@ -51,6 +57,10 @@ class ResearchAgent:
             f"## 调研类型\n\n{research_type}\n\n"
             "## 建议搜索关键词\n\n"
             f"{keyword_text}\n\n"
+            "## 灵感网站优先查找\n\n"
+            f"{inspiration_table}\n\n"
+            "## 素材/活动灵感关键词\n\n"
+            f"{inspiration_keyword_text}\n\n"
             "## 搜索步骤\n\n"
             f"{step_text}\n\n"
             "## 资料记录表\n\n"

@@ -29,6 +29,12 @@ def test_research_agent_directly():
     if "AI 办公工具" not in plan_content:
         raise AssertionError("搜索计划没有写入原始需求。")
 
+    if "灵感网站优先查找" not in plan_content:
+        raise AssertionError("搜索计划没有写入灵感网站。")
+
+    if "Dribbble" not in plan_content or "Behance" not in plan_content:
+        raise AssertionError("搜索计划没有写入核心灵感网站。")
+
     print(f"测试通过：Research Agent 已生成文件 {plan_path}")
 
 

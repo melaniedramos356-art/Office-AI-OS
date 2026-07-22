@@ -1,10 +1,13 @@
 from datetime import datetime
 from pathlib import Path
 
+from agents.inspiration_library import InspirationLibrary
+
 
 class BrowserAgent:
     def __init__(self, output_folder="outputs/browser_plans"):
         self.output_folder = Path(output_folder)
+        self.inspiration_library = InspirationLibrary()
 
     def handle(self, user_task):
         if not isinstance(user_task, str) or not user_task.strip():
@@ -45,12 +48,15 @@ class BrowserAgent:
         steps = self.build_steps(task_type)
         fallback_rules = self.build_fallback_rules(task_type)
         checklist = self.build_checklist(task_type)
+        inspiration_table = self.inspiration_library.build_source_table(user_task)
+        inspiration_keywords = self.inspiration_library.build_search_keywords(user_task)
 
         preparation_text = "\n".join([f"- {item}" for item in preparation_items])
         fast_path_text = "\n".join([f"{index + 1}. {step}" for index, step in enumerate(fast_path_steps)])
         step_text = "\n".join([f"{index + 1}. {step}" for index, step in enumerate(steps)])
         fallback_text = "\n".join([f"- {rule}" for rule in fallback_rules])
         checklist_text = "\n".join([f"- [ ] {item}" for item in checklist])
+        inspiration_keyword_text = "\n".join([f"- {keyword}" for keyword in inspiration_keywords])
 
         return (
             "# 浏览器操作计划\n\n"
@@ -61,6 +67,10 @@ class BrowserAgent:
             f"{preparation_text}\n\n"
             "## 最短操作路径\n\n"
             f"{fast_path_text}\n\n"
+            "## 灵感网站快速入口\n\n"
+            f"{inspiration_table}\n\n"
+            "## 推荐搜索词\n\n"
+            f"{inspiration_keyword_text}\n\n"
             "## 操作步骤\n\n"
             f"{step_text}\n\n"
             "## 超时与异常处理\n\n"
