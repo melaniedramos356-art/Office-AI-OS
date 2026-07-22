@@ -4,6 +4,7 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.inspiration_library import InspirationLibrary
+from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
 from agents.production_technique_library import ProductionTechniqueLibrary
 from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
@@ -114,10 +115,10 @@ class PPTAgent:
         route_info = generation.get("route", {})
         result = generation.get("result", "")
 
-        if route_info.get("status") != "available" or self.is_unusable_model_result(result):
+        if route_info.get("status") != "available" or is_unusable_model_result(result):
             return self.build_fallback_model_advice()
 
-        return self.split_model_advice(result)
+        return split_advice_lines(result, self.build_fallback_model_advice())
 
     def build_fallback_model_advice(self):
         return [
@@ -125,25 +126,6 @@ class PPTAgent:
             "每页只保留 3 个以内重点，避免一页塞太多文字。",
             "关键页预留图片、图表或案例位置，方便后续增强视觉效果。",
         ]
-
-    def is_unusable_model_result(self, result):
-        if not isinstance(result, str) or not result.strip():
-            return True
-
-        error_keywords = ["调用失败", "未设置", "返回格式异常", "没有收到有效提示词", "Mock"]
-        for keyword in error_keywords:
-            if keyword in result:
-                return True
-        return False
-
-    def split_model_advice(self, result):
-        advice_items = []
-        for line in result.splitlines():
-            cleaned_line = line.strip().lstrip("-").lstrip("1234567890.、 ").strip()
-            if cleaned_line:
-                advice_items.append(cleaned_line)
-
-        return advice_items[:3] or self.build_fallback_model_advice()
 
     def build_inspiration_advice(self, user_task):
         source_lines = self.inspiration_library.build_source_lines(user_task, limit=5)

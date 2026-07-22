@@ -4,6 +4,7 @@ from xml.sax.saxutils import escape
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from agents.data_analysis_inspiration_library import DataAnalysisInspirationLibrary
+from agents.model_advice_utils import is_unusable_model_result, split_advice_lines
 from agents.production_technique_library import ProductionTechniqueLibrary
 from agents.technique_library import TechniqueLibrary
 from models.model_router import ModelRouter
@@ -216,39 +217,24 @@ class ExcelAgent:
         generation = self.model_router.generate("excel", prompt)
         result = generation.get("result", "")
 
-        if self.is_unusable_model_result(result):
-            return [
-                "保留原始需求，方便后续追溯。",
-                "表头字段要稳定，避免一列混合多种含义。",
-                "增加备注列，用于记录不确定信息。",
-            ]
+        fallback_advice = self.build_fallback_model_advice()
+        if is_unusable_model_result(result):
+            return fallback_advice
 
-        return self.split_model_advice(result)
+        return split_advice_lines(result, fallback_advice)
+
+    def build_fallback_model_advice(self):
+        return [
+            "保留原始需求，方便后续追溯。",
+            "表头字段要稳定，避免一列混合多种含义。",
+            "增加备注列，用于记录不确定信息。",
+        ]
 
     def extract_original_task(self, rows):
         for row in rows:
             if len(row) >= 2 and row[0] == "原始需求":
                 return row[1]
         return "未识别原始需求"
-
-    def is_unusable_model_result(self, result):
-        if not isinstance(result, str) or not result.strip():
-            return True
-
-        error_keywords = ["调用失败", "未设置", "返回格式异常", "没有收到有效提示词"]
-        for keyword in error_keywords:
-            if keyword in result:
-                return True
-        return False
-
-    def split_model_advice(self, result):
-        advice_items = []
-        for line in result.splitlines():
-            cleaned_line = line.strip().lstrip("-").lstrip("1234567890.、 ").strip()
-            if cleaned_line:
-                advice_items.append(cleaned_line)
-
-        return advice_items[:3] or ["DeepSeek 已返回建议，但内容需要人工复核。"]
 
     def detect_table_type(self, user_task):
         if "客户" in user_task:
