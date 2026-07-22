@@ -10,15 +10,19 @@ def test_ai_butler_agent_directly():
         raise AssertionError(f"AI 管家没有生成执行计划：{result}")
 
     required_texts = [
-        "文件读取 Agent",
+        "File Reader Agent",
         "Model Router",
-        "production_techniques.md",
         "PPT Agent",
         "QA Agent",
+        "去重后的执行流程",
     ]
     for text in required_texts:
         if text not in result:
             raise AssertionError(f"AI 管家计划缺少关键内容：{text}")
+
+    plan_lines = [line.strip() for line in result.splitlines() if line.strip().startswith("-")]
+    if len(plan_lines) != len(set([line.lower() for line in plan_lines])):
+        raise AssertionError("AI 管家计划存在重复步骤。")
 
     print("测试通过：AI Butler Agent 可以生成复杂任务执行计划")
 

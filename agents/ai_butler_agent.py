@@ -14,22 +14,12 @@ class AIButlerAgent:
 
     def build_plan_lines(self, user_task):
         entry_mode = self.detect_entry_mode(user_task)
-        file_steps = self.build_file_steps(user_task)
-        knowledge_steps = self.build_knowledge_steps()
-        model_steps = self.build_model_steps(user_task)
-        office_steps = self.build_office_steps(user_task)
+        pipeline_steps = self.build_quality_pipeline_steps(user_task)
 
         return (
             ["## 入口判断", f"- {entry_mode}"]
-            + ["", "## 文件处理"]
-            + file_steps
-            + ["", "## 知识库调用"]
-            + knowledge_steps
-            + ["", "## 模型调用"]
-            + model_steps
-            + ["", "## 办公 Agent 执行"]
-            + office_steps
-            + ["", "## 质量检查", "- 最后交给 QA Agent 检查文件是否存在、内容是否完整、是否包含原始需求。"]
+            + ["", "## 去重后的执行流程"]
+            + pipeline_steps
         )
 
     def detect_entry_mode(self, user_task):
@@ -38,44 +28,35 @@ class AIButlerAgent:
 
         return "没有 ChatGPT 管家时，使用 Office-AI-OS 本地核心直接执行。"
 
-    def build_file_steps(self, user_task):
+    def build_quality_pipeline_steps(self, user_task):
+        steps = []
+
+        steps.append("- Codex / ChatGPT App 先把需求压缩成：文件类型、读者、主题、交付标准。")
+
         if self.has_file_keyword(user_task):
-            return [
-                "- 先用文件读取 Agent 读取用户提供的 Word / PPT / Excel 原文件。",
-                "- 分析当前文件的问题：结构、版面、文案、图片、数据表达。",
-            ]
+            steps.append("- File Reader Agent 读取参考文件，只提取结构、版式、文案风格和数据表达。")
 
-        return [
-            "- 用户没有提供原文件时，直接按需求生成新的 Word / PPT / Excel 成品文件。",
-            "- 生成后保留原始需求，方便后续追溯和二次修改。",
-        ]
+        if self.needs_web_inspiration(user_task):
+            steps.append("- Browser / Inspiration Agent 查找优质案例和制作技巧，搜索词、网站和结果先去重。")
 
-    def build_knowledge_steps(self):
-        return [
-            "- 读取 memory/production_techniques.md 的通用制作技巧。",
-            "- 读取 materials/shared 的跨办公优秀素材。",
-            "- 读取 Word / PPT / Excel 各自素材库里的专用经验。",
-            "- 需要图片或活动灵感时，读取灵感网站库和数据分析网站库。",
-        ]
+        steps.append("- Learning Agent 把可复用技巧写入 memory，已有技巧不重复写入。")
+        steps.append(self.build_model_step(user_task))
+        steps.extend(self.build_office_steps(user_task))
+        steps.append("- QA Agent 检查最终文件是否完整、可打开、没有提示词或占位内容。")
 
-    def build_model_steps(self, user_task):
-        steps = [
-            "- ChatGPT App / Codex 负责总指挥；Model Router 负责在本地程序里选择可用模型。",
-        ]
+        return self.unique_lines(steps)
 
+    def build_model_step(self, user_task):
         if "图片" in user_task or "视觉" in user_task or "版面" in user_task:
-            steps.append("- 图片理解、图片生成和视觉判断优先交给 Doubao / OpenAI 多模态模型。")
+            return "- Model Router 优先调用适合视觉和版面判断的模型，未接入时用本地技巧兜底。"
 
         if "数据" in user_task or "excel" in user_task.lower() or "表格" in user_task:
-            steps.append("- 数据分析、字段设计和逻辑检查优先交给 DeepSeek。")
+            return "- Model Router 优先调用 DeepSeek 处理数据逻辑、字段设计和检查。"
 
         if "文案" in user_task or "word" in user_task.lower() or "润色" in user_task:
-            steps.append("- 文案润色、语言丰富和长文档结构优先交给 Kimi / OpenAI。")
+            return "- Model Router 优先调用 OpenAI API / Kimi / DeepSeek 处理文案和长文档结构。"
 
-        if len(steps) == 1:
-            steps.append("- 默认先用本地知识库兜底，再按任务类型选择 OpenAI API、DeepSeek、Doubao、Kimi 或本地规则。")
-
-        return steps
+        return "- Model Router 按任务类型选择 OpenAI API、DeepSeek、Doubao、Kimi 或本地规则。"
 
     def build_office_steps(self, user_task):
         steps = []
@@ -100,3 +81,31 @@ class AIButlerAgent:
             if keyword in user_task:
                 return True
         return False
+
+    def needs_web_inspiration(self, user_task):
+        keywords = ["优质案例", "网页", "网站", "搜索", "素材", "灵感", "版面", "图片", "制作技巧", "参考"]
+        for keyword in keywords:
+            if keyword in user_task:
+                return True
+        return False
+
+    def unique_lines(self, lines):
+        unique_result = []
+        seen_lines = set()
+
+        for line in lines:
+            if not isinstance(line, str):
+                continue
+
+            cleaned_line = line.strip()
+            if not cleaned_line:
+                continue
+
+            key = " ".join(cleaned_line.lower().split())
+            if key in seen_lines:
+                continue
+
+            seen_lines.add(key)
+            unique_result.append(cleaned_line)
+
+        return unique_result
