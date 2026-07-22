@@ -5,12 +5,14 @@ from models.mock_model_client import MockModelClient
 from models.model_config import MODEL_CONFIG, PROVIDER_CONFIG
 from models.providers.deepseek_client import DeepSeekClient
 from models.providers.openai_client import OpenAIClient
+from models.prompt_optimizer import PromptOptimizer
 
 
 class ModelRouter:
-    def __init__(self, model_client=None, use_real_models=None):
+    def __init__(self, model_client=None, use_real_models=None, prompt_optimizer=None):
         self.model_client = model_client or MockModelClient()
         self.use_real_models = self.detect_real_model_mode(use_real_models)
+        self.prompt_optimizer = prompt_optimizer or PromptOptimizer()
         self.provider_clients = {
             "deepseek": DeepSeekClient(),
             "openai": OpenAIClient(),
@@ -50,6 +52,8 @@ class ModelRouter:
     def generate(self, task_type, prompt):
         route_info = self.route(task_type)
         provider_order = self.build_generation_provider_order(route_info)
+        optimized_prompt = self.prompt_optimizer.optimize(prompt)
+        prompt_info = self.prompt_optimizer.build_prompt_info(prompt, optimized_prompt)
         attempts = []
 
         for provider_name in provider_order:
@@ -57,7 +61,7 @@ class ModelRouter:
             if not model_client:
                 continue
 
-            model_result = model_client.generate(task_type, prompt)
+            model_result = model_client.generate(task_type, optimized_prompt)
             is_usable_result = not is_unusable_model_result(model_result)
             attempts.append({"provider": provider_name, "usable": is_usable_result})
             selected_route = self.build_route_for_provider(route_info, provider_name)
@@ -67,12 +71,14 @@ class ModelRouter:
                     "route": selected_route,
                     "result": model_result,
                     "attempts": attempts,
+                    "prompt_info": prompt_info,
                 }
 
         return {
             "route": self.build_fallback_route(route_info.get("task_type", task_type)),
-            "result": self.model_client.generate(task_type, prompt),
+            "result": self.model_client.generate(task_type, optimized_prompt),
             "attempts": attempts,
+            "prompt_info": prompt_info,
         }
 
     def build_generation_provider_order(self, route_info):
