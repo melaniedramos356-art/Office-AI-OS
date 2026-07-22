@@ -513,3 +513,27 @@ Office-AI-OS
 ```bash
 python test_desktop_shortcut.py
 ```
+
+## 中文脚本执行规则
+
+在 Windows PowerShell 中，不要把包含中文的 Python 代码直接通过管道传给 `python -`。这种方式可能把中文变成问号。
+
+项目内需要临时执行中文 Python 代码时，统一使用：
+
+```text
+scripts/safe_python_runner.py
+```
+
+规则：
+
+```text
+先把脚本保存为 UTF-8 文件
+再执行这个文件
+不要直接用 PowerShell 管道传中文代码
+```
+
+测试命令：
+
+```bash
+python test_safe_python_runner.py
+```
