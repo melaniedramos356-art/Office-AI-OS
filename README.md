@@ -104,3 +104,27 @@ python test_research_agent.py
 ```text
 outputs/research_plans/
 ```
+
+## v0.4 Browser Agent
+
+Browser Agent 现在可以生成浏览器操作计划，暂时不真实控制浏览器。
+
+适合输入：
+
+```text
+帮我打开官网网页并整理关键信息
+帮我打开某个网站截图
+帮我下载网页上的资料
+```
+
+测试命令：
+
+```bash
+python test_browser_agent.py
+```
+
+生成文件位置：
+
+```text
+outputs/browser_plans/
+```

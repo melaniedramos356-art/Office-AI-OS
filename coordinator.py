@@ -1,3 +1,4 @@
+from agents.browser_agent import BrowserAgent
 from agents.excel_agent import ExcelAgent
 from agents.ppt_agent import PPTAgent
 from agents.qa_agent import QAAgent
@@ -7,6 +8,7 @@ from agents.word_agent import WordAgent
 
 class ChiefCoordinator:
     def __init__(self):
+        self.browser_agent = BrowserAgent()
         self.word_agent = WordAgent()
         self.excel_agent = ExcelAgent()
         self.ppt_agent = PPTAgent()
@@ -34,6 +36,10 @@ class ChiefCoordinator:
         excel_keywords = ["excel", "表格", "数据", "统计", "计算", "报表", "spreadsheet"]
         word_keywords = ["word", "文档", "文章", "报告", "合同", "通知", "document"]
         research_keywords = ["调研", "搜索", "资料", "查找", "研究", "竞品", "research"]
+        browser_keywords = ["浏览器", "网页", "网站", "打开", "链接", "网址", "url", "browser"]
+
+        if self.has_keyword(task_text, browser_keywords):
+            return self.browser_agent
 
         if self.has_keyword(task_text, research_keywords):
             return self.research_agent
